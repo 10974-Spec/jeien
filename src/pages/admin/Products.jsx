@@ -91,7 +91,7 @@ const AdminProducts = () => {
     try {
       setLoadingCategories(true)
       const token = localStorage.getItem('token')
-      const response = await fetch('http://localhost:5000/api/categories', {
+      const response = await fetch('https://jeien-backend.onrender.com/api/categories', {
         headers: {
           'Authorization': token ? `Bearer ${token}` : '',
           'Content-Type': 'application/json'
