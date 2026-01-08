@@ -137,7 +137,7 @@ const Header = ({ user, isAuthenticated, handleLogout, getDashboardPath }) => {
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-1">
               <Phone className="h-3 w-3" />
-              <span>+254 700 000 000</span>
+              <span>+254746917511</span>
             </div>
           </div>
         </div>
@@ -473,7 +473,7 @@ const PublicLayout = ({ children }) => {
             <div>
               <h4 className="font-bold mb-4 text-white">Contact</h4>
               <p className="text-blue-200">support@jeien.com</p>
-              <p className="text-blue-200">+254 700 000 000</p>
+              <p className="text-blue-200">+254746917511</p>
             </div>
           </div>
           <div className="border-t border-blue-800 mt-8 pt-8 text-center text-blue-300">

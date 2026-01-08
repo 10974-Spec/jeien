@@ -4,7 +4,7 @@ const AdminSettings = () => {
   const [settings, setSettings] = useState({
     siteName: 'E-Shop',
     siteEmail: 'admin@eshop.com',
-    sitePhone: '+254700000000',
+    sitePhone: '+254746917511',
     currency: 'KES',
     defaultCommission: 10,
     allowVendorRegistration: true,

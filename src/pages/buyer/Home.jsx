@@ -246,29 +246,135 @@ const ProductCard = ({ product }) => {
   )
 }
 
+// Predefined gradient colors for categories without images
+const categoryGradients = [
+  'from-blue-500/20 to-blue-600/20',
+  'from-green-500/20 to-green-600/20',
+  'from-purple-500/20 to-purple-600/20',
+  'from-pink-500/20 to-pink-600/20',
+  'from-orange-500/20 to-orange-600/20',
+  'from-teal-500/20 to-teal-600/20',
+  'from-red-500/20 to-red-600/20',
+  'from-yellow-500/20 to-yellow-600/20',
+  'from-indigo-500/20 to-indigo-600/20',
+  'from-cyan-500/20 to-cyan-600/20',
+  'from-rose-500/20 to-rose-600/20',
+  'from-emerald-500/20 to-emerald-600/20',
+  'from-violet-500/20 to-violet-600/20',
+  'from-fuchsia-500/20 to-fuchsia-600/20',
+  'from-amber-500/20 to-amber-600/20',
+  'from-lime-500/20 to-lime-600/20',
+  'from-sky-500/20 to-sky-600/20',
+  'from-cyan-500/20 to-blue-500/20',
+  'from-pink-500/20 to-rose-500/20',
+  'from-purple-500/20 to-indigo-500/20',
+  'from-green-500/20 to-emerald-500/20',
+]
+
+// Icon mapping for categories
+const categoryIcons = {
+  'electronics': Smartphone,
+  'fashion': Shirt,
+  'clothing': Shirt,
+  'home': HomeIcon,
+  'furniture': Sofa,
+  'sports': Dumbbell,
+  'beauty': Sparkles,
+  'cosmetics': Sparkles,
+  'baby': Baby,
+  'books': BookOpen,
+  'computers': Laptop,
+  'laptops': Laptop,
+  'watches': Watch,
+  'gaming': Gamepad2,
+  'games': Gamepad2,
+  'travel': Plane,
+  'health': HeartPulse,
+  'medical': HeartPulse,
+  'music': Music,
+  'photography': Camera,
+  'tools': Wrench,
+  'pets': PawPrint,
+  'jewelry': Gem,
+  'cars': Car,
+  'automotive': Car,
+  'food': Gift,
+  'drinks': Gift,
+  'education': BookOpen,
+  'office': Laptop,
+  'garden': HomeIcon,
+  'kitchen': HomeIcon,
+  'mobile': Smartphone,
+  'tablets': Smartphone,
+  'tv': Smartphone,
+  'audio': Music,
+  'wearables': Watch,
+}
+
+// Get gradient color based on category index
+const getGradientForIndex = (index) => {
+  return categoryGradients[index % categoryGradients.length]
+}
+
+// Get icon for category
+const getIconForCategory = (categoryName, categorySlug) => {
+  const key = (categorySlug || categoryName || '').toLowerCase()
+  for (const [iconKey, Icon] of Object.entries(categoryIcons)) {
+    if (key.includes(iconKey)) {
+      return Icon
+    }
+  }
+  return Smartphone // Default icon
+}
+
 // Category Section Component
 const CategorySection = ({ categories }) => {
-  const categoryIcons = {
-    'electronics': Smartphone,
-    'fashion': Shirt,
-    'home': HomeIcon,
-    'sports': Dumbbell,
-    'beauty': Sparkles,
-    'baby': Baby,
-    'books': BookOpen,
-    'computers': Laptop,
-    'furniture': Sofa,
-    'watches': Watch,
-    'gaming': Gamepad2,
-    'travel': Plane,
-    'health': HeartPulse,
-    'music': Music,
-    'photography': Camera,
-    'tools': Wrench,
-    'pets': PawPrint,
-    'jewelry': Gem,
-    'cars': Car,
-  }
+  const [categoryImages, setCategoryImages] = useState({})
+  const [loadingImages, setLoadingImages] = useState(true)
+
+  useEffect(() => {
+    const fetchCategoryImages = async () => {
+      try {
+        setLoadingImages(true)
+        const imagePromises = categories.map(async (category) => {
+          try {
+            // Fetch full category data including image
+            const response = await categoryService.getCategoryById(category._id)
+            return {
+              id: category._id,
+              image: response.data?.image || null,
+              gradient: getGradientForIndex(categories.indexOf(category))
+            }
+          } catch (error) {
+            console.error(`Failed to fetch image for category ${category._id}:`, error)
+            return {
+              id: category._id,
+              image: null,
+              gradient: getGradientForIndex(categories.indexOf(category))
+            }
+          }
+        })
+
+        const categoryData = await Promise.all(imagePromises)
+        const imagesMap = {}
+        categoryData.forEach(data => {
+          imagesMap[data.id] = {
+            image: data.image,
+            gradient: data.gradient
+          }
+        })
+        setCategoryImages(imagesMap)
+      } catch (error) {
+        console.error('Failed to fetch category images:', error)
+      } finally {
+        setLoadingImages(false)
+      }
+    }
+
+    if (categories && categories.length > 0) {
+      fetchCategoryImages()
+    }
+  }, [categories])
 
   return (
     <section className="py-12">
@@ -283,33 +389,65 @@ const CategorySection = ({ categories }) => {
           </Link>
         </div>
 
-        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-3">
-          {categories.slice(0, 21).map((category) => {
-            const Icon = categoryIcons[category.slug?.toLowerCase()] || categoryIcons[category.name?.toLowerCase()] || Smartphone
-            const iconColor = category.color || 'bg-blue-100 text-blue-700'
-            
-            return (
-              <motion.div
-                key={category._id}
-                whileHover={{ y: -4, scale: 1.02 }}
-                transition={{ duration: 0.2 }}
-              >
-                <Link
-                  to={`/category/${category._id}`}
-                  className="group flex flex-col items-center p-4 rounded-2xl bg-white border border-gray-200 hover:border-blue-500/20 hover:shadow-lg transition-all duration-300"
+        {loadingImages ? (
+          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-3">
+            {[...Array(14)].map((_, index) => (
+              <div key={index} className="animate-pulse">
+                <div className="aspect-square rounded-2xl bg-gradient-to-br from-gray-200 to-gray-300 mb-3"></div>
+                <div className="h-4 bg-gray-200 rounded mb-1"></div>
+                <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-3">
+            {categories.slice(0, 21).map((category, index) => {
+              const Icon = getIconForCategory(category.name, category.slug)
+              const categoryData = categoryImages[category._id] || {
+                image: null,
+                gradient: getGradientForIndex(index)
+              }
+              const hasImage = categoryData.image
+              
+              return (
+                <motion.div
+                  key={category._id}
+                  whileHover={{ y: -4, scale: 1.02 }}
+                  transition={{ duration: 0.2 }}
                 >
-                  <div className={`w-14 h-14 rounded-xl ${iconColor} flex items-center justify-center mb-3 group-hover:scale-110 transition-transform`}>
-                    <Icon className="h-6 w-6" />
-                  </div>
-                  <h3 className="font-medium text-xs text-center leading-tight">{category.name}</h3>
-                  <span className="text-[10px] text-gray-500 mt-0.5">
-                    {category.stats?.totalProducts || 0} items
-                  </span>
-                </Link>
-              </motion.div>
-            )
-          })}
-        </div>
+                  <Link
+                    to={`/category/${category._id}`}
+                    className="group flex flex-col items-center p-4 rounded-2xl bg-white border border-gray-200 hover:border-blue-500/20 hover:shadow-lg transition-all duration-300"
+                  >
+                    <div className={`w-14 h-14 rounded-xl mb-3 overflow-hidden ${!hasImage ? categoryData.gradient + ' flex items-center justify-center' : ''}`}>
+                      {hasImage ? (
+                        <img
+                          src={categoryData.image}
+                          alt={category.name}
+                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                          onError={(e) => {
+                            e.target.onerror = null
+                            e.target.parentElement.className += ` ${categoryData.gradient}`
+                            e.target.parentElement.innerHTML = ''
+                          }}
+                        />
+                      ) : (
+                        <div className={`w-full h-full flex items-center justify-center ${categoryData.gradient}`}>
+                          <Icon className="h-6 w-6 text-white/80" />
+                        </div>
+                      )}
+                    </div>
+                    
+                    <h3 className="font-medium text-xs text-center leading-tight">{category.name}</h3>
+                    <span className="text-[10px] text-gray-500 mt-0.5">
+                      {category.stats?.totalProducts || 0} items
+                    </span>
+                  </Link>
+                </motion.div>
+              )
+            })}
+          </div>
+        )}
       </div>
     </section>
   )

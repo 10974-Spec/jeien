@@ -163,7 +163,7 @@ export const Header = () => {
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-1">
               <Phone className="h-3 w-3" />
-              <span>+254 700 123 456</span>
+              <span>+254746917511</span>
             </div>
             {isAuthenticated ? (
               <span className="text-blue-200">Welcome, {user?.name?.split(' ')[0] || 'User'}!</span>
