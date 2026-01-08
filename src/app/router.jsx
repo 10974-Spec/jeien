@@ -94,6 +94,7 @@ const BuyerRoutes = () => (
 function AppRouter() {
   return (
     <Routes>
+      {/* Public Auth Routes */}
       <Route path="/login" element={
         <PublicRoute>
           <Login />
@@ -105,9 +106,12 @@ function AppRouter() {
         </PublicRoute>
       } />
 
+      {/* Admin Routes */}
       <Route path="/admin" element={<AdminRoutes />}>
         <Route path="dashboard" element={<AdminDashboard />} />
         <Route path="products" element={<AdminProducts />} />
+        {/* This route will handle both /admin/products and /admin/products/edit/:id */}
+        <Route path="products/edit/:id" element={<AdminProducts />} />
         <Route path="categories" element={<AdminCategories />} />
         <Route path="vendors" element={<AdminVendors />} />
         <Route path="orders" element={<AdminOrders />} />
@@ -119,6 +123,7 @@ function AppRouter() {
         <Route index element={<Navigate to="dashboard" replace />} />
       </Route>
 
+      {/* Vendor Routes */}
       <Route path="/vendor" element={<VendorRoutes />}>
         <Route path="dashboard" element={<VendorDashboard />} />
         <Route path="products" element={<VendorProducts />} />
@@ -128,6 +133,7 @@ function AppRouter() {
         <Route index element={<Navigate to="dashboard" replace />} />
       </Route>
 
+      {/* Buyer/Public Routes */}
       <Route path="/" element={<BuyerRoutes />}>
         <Route index element={<Home />} />
         <Route path="category/:id" element={<Category />} />
@@ -138,6 +144,7 @@ function AppRouter() {
         <Route path="orders" element={<BuyerOrders />} />
       </Route>
 
+      {/* 404 - Catch all */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )

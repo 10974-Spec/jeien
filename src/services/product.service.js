@@ -1,9 +1,37 @@
 import api from './api'
 
 const productService = {
-  getAllProducts: (params) => api.get('/products', { params }),
+  getAllProducts: (params = {}) => {
+    console.log('=== PRODUCT SERVICE: getAllProducts called ===');
+    console.log('Params received:', params);
+    console.log('Type of params:', typeof params);
+    
+    // Handle different types of params
+    let queryParams = {};
+    
+    if (typeof params === 'string') {
+      console.log('Params is a string, parsing...');
+      // If it's a string like "?admin=true&limit=100", remove the ? and parse
+      const cleanString = params.startsWith('?') ? params.substring(1) : params;
+      const urlParams = new URLSearchParams(cleanString);
+      queryParams = Object.fromEntries(urlParams.entries());
+    } else if (typeof params === 'object' && params !== null) {
+      console.log('Params is an object, using directly');
+      queryParams = params;
+    } else {
+      console.log('Params is undefined or null, using empty object');
+      queryParams = {};
+    }
+    
+    console.log('Final query params:', queryParams);
+    return api.get('/products', { params: queryParams });
+  },
   
-  getProductById: (id) => api.get(`/products/${id}`),
+  getProductById: (id) => {
+    console.log('=== PRODUCT SERVICE: getProductById called ===');
+    console.log('Product ID:', id);
+    return api.get(`/products/${id}`);
+  },
   
   createProduct: (productData) => {
     console.log('=== PRODUCT SERVICE: createProduct called ===');
@@ -111,11 +139,33 @@ const productService = {
     return api.put(`/products/${id}`, formData);
   },
   
-  deleteProduct: (id) => api.delete(`/products/${id}`),
+  deleteProduct: (id) => {
+    console.log('=== PRODUCT SERVICE: deleteProduct called ===');
+    console.log('Product ID:', id);
+    return api.delete(`/products/${id}`);
+  },
   
-  getVendorProducts: (params) => api.get('/products/vendor/my', { params }),
+  getVendorProducts: (params = {}) => {
+    console.log('=== PRODUCT SERVICE: getVendorProducts called ===');
+    console.log('Params:', params);
+    
+    let queryParams = {};
+    if (typeof params === 'string') {
+      const cleanString = params.startsWith('?') ? params.substring(1) : params;
+      const urlParams = new URLSearchParams(cleanString);
+      queryParams = Object.fromEntries(urlParams.entries());
+    } else if (typeof params === 'object' && params !== null) {
+      queryParams = params;
+    }
+    
+    return api.get('/products/vendor/my', { params: queryParams });
+  },
   
-  searchProducts: (query) => api.get(`/products/search?q=${encodeURIComponent(query)}`),
+  searchProducts: (query) => {
+    console.log('=== PRODUCT SERVICE: searchProducts called ===');
+    console.log('Search query:', query);
+    return api.get(`/products/search?q=${encodeURIComponent(query)}`);
+  },
   
   updateStock: (id, stockData) => {
     console.log('=== PRODUCT SERVICE: updateStock called ===');
@@ -150,6 +200,21 @@ const productService = {
     }
     
     return api.post('/products', testFormData);
+  },
+  
+  // Helper function to convert query string to object
+  parseQueryString: (queryString) => {
+    if (!queryString) return {};
+    const cleanString = queryString.startsWith('?') ? queryString.substring(1) : queryString;
+    const urlParams = new URLSearchParams(cleanString);
+    return Object.fromEntries(urlParams.entries());
+  },
+  
+  // Helper function to convert object to query string
+  toQueryString: (params = {}) => {
+    if (!params || Object.keys(params).length === 0) return '';
+    const urlParams = new URLSearchParams(params);
+    return `?${urlParams.toString()}`;
   }
 }
 

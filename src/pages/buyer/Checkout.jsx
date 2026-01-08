@@ -3,7 +3,9 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
 import { useCart } from '../../hooks/useCart'
 import orderService from '../../services/order.service'
+import paymentService from '../../services/payment.service'
 import userService from '../../services/user.service'
+import toast from 'react-hot-toast'
 
 const Checkout = () => {
   const navigate = useNavigate()
@@ -11,6 +13,8 @@ const Checkout = () => {
   const { cartItems, getCartTotal, clearCart } = useCart()
   
   const [loading, setLoading] = useState(false)
+  const [processingPayment, setProcessingPayment] = useState(false)
+  const [orderId, setOrderId] = useState(null)
   const [addresses, setAddresses] = useState([])
   const [selectedAddress, setSelectedAddress] = useState(null)
   const [paymentMethod, setPaymentMethod] = useState('MPESA')
@@ -28,6 +32,8 @@ const Checkout = () => {
   })
   const [showNewAddress, setShowNewAddress] = useState(false)
   const [mpesaPhone, setMpesaPhone] = useState('')
+  const [pollingInterval, setPollingInterval] = useState(null)
+  const [order, setOrder] = useState(null)
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -42,6 +48,13 @@ const Checkout = () => {
 
     fetchAddresses()
     initializeOrderData()
+
+    // Cleanup polling on unmount
+    return () => {
+      if (pollingInterval) {
+        clearInterval(pollingInterval)
+      }
+    }
   }, [isAuthenticated, cartItems.length, navigate])
 
   const fetchAddresses = async () => {
@@ -69,6 +82,7 @@ const Checkout = () => {
       }
     } catch (error) {
       console.error('Failed to fetch addresses:', error)
+      toast.error('Failed to load addresses')
     }
   }
 
@@ -126,74 +140,281 @@ const Checkout = () => {
     const { fullName, phone, country, city, street } = orderData.deliveryAddress
     
     if (!fullName || !phone || !country || !city || !street) {
-      alert('Please fill in all required address fields')
+      toast.error('Please fill in all required address fields')
       return false
     }
 
     if (paymentMethod === 'MPESA' && !mpesaPhone) {
-      alert('Please enter your M-Pesa phone number')
+      toast.error('Please enter your M-Pesa phone number')
+      return false
+    }
+
+    if (paymentMethod === 'MPESA' && mpesaPhone.replace(/\D/g, '').length < 10) {
+      toast.error('Please enter a valid phone number (10 digits minimum)')
       return false
     }
 
     return true
   }
 
-  const handlePlaceOrder = async () => {
-    if (!validateForm()) return
-
-    setLoading(true)
+  const createOrder = async () => {
     try {
       // Prepare order items
       const items = cartItems.map(item => ({
         productId: item._id,
         title: item.title,
-        price: item.price,
+        price: parseFloat(item.price).toFixed(2), // Ensure 2 decimal places
         quantity: item.quantity,
         attributes: item.attributes || [],
+        vendorId: item.vendorId || item.vendor?._id,
+        image: item.images?.[0]
       }))
+
+      const subtotal = parseFloat(getCartTotal().toFixed(2))
+      const tax = parseFloat((subtotal * 0.16).toFixed(2))
+      const shipping = 500
+      const total = parseFloat((subtotal + tax + shipping).toFixed(2))
+
+      console.log('Calculated amounts:', { subtotal, tax, shipping, total })
 
       const orderPayload = {
         items,
         deliveryAddress: orderData.deliveryAddress,
         paymentMethod,
         customerNotes: orderData.customerNotes,
+        shippingMethod: 'Standard',
+        totalAmount: total, // Send as number with 2 decimals
+        vendorIds: [...new Set(cartItems.map(item => item.vendorId || item.vendor?._id).filter(id => id))]
       }
 
-      if (paymentMethod === 'MPESA') {
-        orderPayload.phone = mpesaPhone
-      }
+      console.log('Creating order with payload:', orderPayload)
 
       const response = await orderService.createOrder(orderPayload)
       const order = response.data.order
+      
+      console.log('Order created:', order)
+      
+      setOrderId(order._id)
+      setOrder(order)
+      return order
+    } catch (error) {
+      console.error('Failed to create order:', error)
+      toast.error(error.response?.data?.message || 'Failed to create order')
+      throw error
+    }
+  }
 
-      // Clear cart on success
-      clearCart()
+  const initiatePayment = async (order) => {
+    try {
+      // Get the EXACT amount from the order object, not recalculating
+      const amount = parseFloat(order.totalAmount || order.total)
+      
+      console.log('Initiating payment for order:', {
+        orderId: order._id,
+        orderAmount: amount,
+        paymentMethod
+      })
 
-      // Redirect based on payment method
+      // Format phone number for M-Pesa
+      let formattedPhone = mpesaPhone
       if (paymentMethod === 'MPESA') {
-        // Show M-Pesa payment instructions
-        alert('Order placed successfully! Please check your phone for M-Pesa prompt.')
-        navigate(`/orders`)
+        formattedPhone = mpesaPhone.replace(/\D/g, '')
+        console.log('Formatted phone number for M-Pesa:', formattedPhone)
+      }
+
+      const paymentData = {
+        orderId: order._id,
+        phone: formattedPhone,
+        amount: amount
+      }
+
+      console.log('Final payment data being sent:', paymentData)
+
+      let response
+      switch (paymentMethod) {
+        case 'MPESA':
+          response = await paymentService.initiateMpesaPayment(paymentData)
+          break
+        case 'PAYPAL':
+          response = await paymentService.processPayPalPayment(paymentData)
+          break
+        case 'CARD':
+          response = await paymentService.processCardPayment(paymentData)
+          break
+        default:
+          throw new Error('Unsupported payment method')
+      }
+
+      console.log('Payment response:', response.data)
+      return response.data
+
+    } catch (error) {
+      console.error('Payment error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        config: error.config
+      })
+      
+      throw new Error(error.response?.data?.message || error.message || 'Payment failed')
+    }
+  }
+
+  const processMpesaPayment = async (order) => {
+    try {
+      setProcessingPayment(true)
+      
+      const result = await initiatePayment(order)
+      
+      if (result.success) {
+        toast.success('M-Pesa payment initiated! Please check your phone for the STK Push prompt.')
+        
+        // Start polling for payment status
+        startPolling(order._id, result.checkoutRequestId || result.transactionId)
       } else {
-        // Redirect to payment gateway or order confirmation
-        navigate(`/orders`)
+        toast.error(result.message || 'Failed to initiate M-Pesa payment')
+        setProcessingPayment(false)
       }
     } catch (error) {
-      console.error('Failed to place order:', error)
-      alert(error.response?.data?.message || 'Failed to place order')
-    } finally {
-      setLoading(false)
+      console.error('M-Pesa payment error:', error)
+      toast.error(error.message || 'M-Pesa payment failed')
+      setProcessingPayment(false)
     }
+  }
+
+  const startPolling = (orderId, transactionId) => {
+    // Clear any existing polling
+    if (pollingInterval) {
+      clearInterval(pollingInterval)
+    }
+
+    let attempts = 0
+    const maxAttempts = 30 // 30 attempts with 10-second intervals = 5 minutes
+    
+    const interval = setInterval(async () => {
+      attempts++
+      console.log(`Polling payment status attempt ${attempts}/${maxAttempts}`)
+      
+      try {
+        const statusResponse = await paymentService.getPaymentStatus(orderId)
+        console.log('Payment status response:', statusResponse.data)
+        
+        if (statusResponse.data.paymentStatus === 'COMPLETED') {
+          clearInterval(interval)
+          setPollingInterval(null)
+          setProcessingPayment(false)
+          toast.success('Payment completed successfully!')
+          
+          // Clear cart and redirect
+          clearCart()
+          navigate('/order-success', { state: { orderId: orderId } })
+        } else if (statusResponse.data.paymentStatus === 'FAILED') {
+          clearInterval(interval)
+          setPollingInterval(null)
+          setProcessingPayment(false)
+          toast.error('Payment failed. Please try again.')
+        } else if (statusResponse.data.paymentStatus === 'PROCESSING') {
+          // Still processing, continue polling
+          console.log('Payment still processing...')
+        } else if (attempts >= maxAttempts) {
+          clearInterval(interval)
+          setPollingInterval(null)
+          setProcessingPayment(false)
+          toast.error('Payment timeout. Please check your M-Pesa messages or contact support.')
+        }
+      } catch (error) {
+        console.error('Payment status check error:', error)
+        
+        if (attempts >= maxAttempts) {
+          clearInterval(interval)
+          setPollingInterval(null)
+          setProcessingPayment(false)
+          toast.error('Payment status check failed after multiple attempts.')
+        }
+      }
+    }, 10000) // Check every 10 seconds
+
+    setPollingInterval(interval)
+  }
+
+  const handleOtherPayment = async (order) => {
+    try {
+      const result = await initiatePayment(order)
+      
+      if (result.success) {
+        if (paymentMethod === 'PAYPAL') {
+          // Redirect to PayPal if needed
+          if (result.redirectUrl) {
+            window.location.href = result.redirectUrl
+          } else {
+            toast.success('PayPal payment initiated successfully!')
+            // Clear cart and redirect
+            clearCart()
+            navigate('/order-success', { state: { orderId: order._id } })
+          }
+        } else if (paymentMethod === 'CARD') {
+          toast.success('Card payment processed successfully!')
+          clearCart()
+          navigate('/order-success', { state: { orderId: order._id } })
+        }
+      } else {
+        toast.error(result.message || 'Payment failed')
+      }
+    } catch (error) {
+      console.error('Payment error:', error)
+      toast.error(error.message || 'Payment failed')
+    }
+  }
+
+  const handlePlaceOrder = async () => {
+    if (!validateForm()) return
+
+    setLoading(true)
+
+    try {
+      // Create the order first
+      const newOrder = await createOrder()
+      console.log('Order created successfully:', newOrder)
+
+      // Process payment based on method
+      if (paymentMethod === 'MPESA') {
+        await processMpesaPayment(newOrder)
+      } else if (paymentMethod === 'CASH_ON_DELIVERY') {
+        // For COD, just clear cart and redirect
+        clearCart()
+        toast.success('Order placed successfully! Please have cash ready for delivery.')
+        navigate('/order-success', { state: { orderId: newOrder._id } })
+      } else if (paymentMethod === 'PAYPAL' || paymentMethod === 'CARD') {
+        await handleOtherPayment(newOrder)
+      }
+
+    } catch (error) {
+      console.error('Checkout error:', error)
+      toast.error(error.message || 'Failed to place order')
+    } finally {
+      if (paymentMethod !== 'MPESA') {
+        setLoading(false)
+      }
+    }
+  }
+
+  const cancelPayment = () => {
+    if (pollingInterval) {
+      clearInterval(pollingInterval)
+      setPollingInterval(null)
+    }
+    setProcessingPayment(false)
+    toast.info('Payment process cancelled')
   }
 
   if (!isAuthenticated || cartItems.length === 0) {
     return null
   }
 
-  const subtotal = getCartTotal()
-  const tax = subtotal * 0.16
-  const shipping = 500 // Fixed shipping for now
-  const total = subtotal + tax + shipping
+  const subtotal = parseFloat(getCartTotal().toFixed(2))
+  const tax = parseFloat((subtotal * 0.16).toFixed(2))
+  const shipping = 500
+  const total = parseFloat((subtotal + tax + shipping).toFixed(2))
 
   return (
     <div className="space-y-8">
@@ -213,24 +434,26 @@ const Checkout = () => {
                   {addresses.map((address) => (
                     <div
                       key={address._id}
-                      className={`p-4 border rounded-lg cursor-pointer ${
-                        selectedAddress === address._id ? 'border-blue-500 bg-blue-50' : 'border-gray-200'
+                      className={`p-4 border rounded-lg cursor-pointer transition-all ${
+                        selectedAddress === address._id 
+                          ? 'border-blue-500 bg-blue-50 transform scale-[1.02]' 
+                          : 'border-gray-200 hover:border-gray-300'
                       }`}
                       onClick={() => handleAddressChange(address._id)}
                     >
                       <div className="flex items-start justify-between">
                         <div>
-                          <p className="font-medium">{address.fullName}</p>
-                          <p className="text-gray-600">{address.phone}</p>
-                          <p className="text-gray-600">
+                          <p className="font-medium text-gray-800">{address.fullName}</p>
+                          <p className="text-gray-600 mt-1">{address.phone}</p>
+                          <p className="text-gray-600 text-sm mt-1">
                             {address.street}, {address.city}, {address.country}
                           </p>
                           {address.postalCode && (
-                            <p className="text-gray-600">Postal Code: {address.postalCode}</p>
+                            <p className="text-gray-500 text-sm mt-1">Postal Code: {address.postalCode}</p>
                           )}
                         </div>
                         {address.isDefault && (
-                          <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded">
+                          <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full font-medium">
                             Default
                           </span>
                         )}
@@ -240,9 +463,12 @@ const Checkout = () => {
                 </div>
                 <button
                   onClick={() => setShowNewAddress(true)}
-                  className="mt-4 text-blue-600 hover:text-blue-800"
+                  className="mt-4 px-4 py-2 text-blue-600 hover:text-blue-800 font-medium flex items-center gap-2"
                 >
-                  + Add New Address
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  Add New Address
                 </button>
               </div>
             )}
@@ -252,7 +478,7 @@ const Checkout = () => {
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium mb-1">
+                    <label className="block text-sm font-medium mb-1 text-gray-700">
                       Full Name *
                     </label>
                     <input
@@ -260,12 +486,12 @@ const Checkout = () => {
                       name="deliveryAddress.fullName"
                       value={orderData.deliveryAddress.fullName}
                       onChange={handleInputChange}
-                      className="w-full px-3 py-2 border rounded"
+                      className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
                       required
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-1">
+                    <label className="block text-sm font-medium mb-1 text-gray-700">
                       Phone Number *
                     </label>
                     <input
@@ -273,34 +499,37 @@ const Checkout = () => {
                       name="deliveryAddress.phone"
                       value={orderData.deliveryAddress.phone}
                       onChange={handleInputChange}
-                      className="w-full px-3 py-2 border rounded"
+                      className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
                       required
+                      placeholder="0712 345 678"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-1">Email</label>
+                    <label className="block text-sm font-medium mb-1 text-gray-700">Email</label>
                     <input
                       type="email"
                       name="deliveryAddress.email"
                       value={orderData.deliveryAddress.email}
                       onChange={handleInputChange}
-                      className="w-full px-3 py-2 border rounded"
+                      className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                      placeholder="your@email.com"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-1">
+                    <label className="block text-sm font-medium mb-1 text-gray-700">
                       Country *
                     </label>
                     <select
                       name="deliveryAddress.country"
                       value={orderData.deliveryAddress.country}
                       onChange={handleInputChange}
-                      className="w-full px-3 py-2 border rounded"
+                      className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition bg-white"
                       required
                     >
                       <option value="Kenya">Kenya</option>
                       <option value="Uganda">Uganda</option>
                       <option value="Tanzania">Tanzania</option>
+                      <option value="Rwanda">Rwanda</option>
                       <option value="Other">Other</option>
                     </select>
                   </div>
@@ -308,7 +537,7 @@ const Checkout = () => {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium mb-1">
+                    <label className="block text-sm font-medium mb-1 text-gray-700">
                       City/Town *
                     </label>
                     <input
@@ -316,12 +545,13 @@ const Checkout = () => {
                       name="deliveryAddress.city"
                       value={orderData.deliveryAddress.city}
                       onChange={handleInputChange}
-                      className="w-full px-3 py-2 border rounded"
+                      className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
                       required
+                      placeholder="Nairobi"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-1">
+                    <label className="block text-sm font-medium mb-1 text-gray-700">
                       Postal Code
                     </label>
                     <input
@@ -329,31 +559,36 @@ const Checkout = () => {
                       name="deliveryAddress.postalCode"
                       value={orderData.deliveryAddress.postalCode}
                       onChange={handleInputChange}
-                      className="w-full px-3 py-2 border rounded"
+                      className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                      placeholder="00100"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-1">
+                  <label className="block text-sm font-medium mb-1 text-gray-700">
                     Street Address *
                   </label>
                   <textarea
                     name="deliveryAddress.street"
                     value={orderData.deliveryAddress.street}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border rounded"
+                    className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
                     rows="3"
                     required
+                    placeholder="Building name, street, apartment number"
                   />
                 </div>
 
                 {addresses.length > 0 && (
                   <button
                     onClick={() => setShowNewAddress(false)}
-                    className="text-sm text-gray-600 hover:text-gray-800"
+                    className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 font-medium flex items-center gap-2"
                   >
-                    ← Back to saved addresses
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
+                    Back to saved addresses
                   </button>
                 )}
               </div>
@@ -362,130 +597,137 @@ const Checkout = () => {
 
           {/* Payment Method */}
           <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-bold mb-4">Payment Method</h2>
+            <h2 className="text-xl font-bold mb-4 text-gray-800">Payment Method</h2>
             
-            <div className="space-y-4">
-              <div className="flex items-center space-x-3">
-                <input
-                  type="radio"
-                  id="mpesa"
-                  name="paymentMethod"
-                  value="MPESA"
-                  checked={paymentMethod === 'MPESA'}
-                  onChange={(e) => setPaymentMethod(e.target.value)}
-                  className="h-5 w-5"
-                />
-                <label htmlFor="mpesa" className="flex-1">
+            <div className="space-y-3">
+              <div className={`flex items-center space-x-3 p-4 border rounded-lg cursor-pointer transition-all ${
+                paymentMethod === 'MPESA' ? 'border-green-500 bg-green-50' : 'border-gray-200 hover:border-gray-300'
+              }`} onClick={() => setPaymentMethod('MPESA')}>
+                <div className={`flex items-center justify-center w-6 h-6 rounded-full border ${
+                  paymentMethod === 'MPESA' ? 'border-green-500 bg-green-500' : 'border-gray-300'
+                }`}>
+                  {paymentMethod === 'MPESA' && (
+                    <div className="w-3 h-3 bg-white rounded-full"></div>
+                  )}
+                </div>
+                <div className="flex-1">
                   <div className="flex items-center justify-between">
                     <div>
-                      <span className="font-medium">M-Pesa</span>
+                      <span className="font-medium text-gray-800">M-Pesa</span>
                       <p className="text-sm text-gray-600">
                         Pay with mobile money
                       </p>
                     </div>
-                    <div className="px-3 py-1 bg-green-100 text-green-800 rounded text-sm">
-                      Recommended
-                    </div>
+                    {paymentMethod === 'MPESA' && (
+                      <div className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">
+                        Recommended
+                      </div>
+                    )}
                   </div>
-                </label>
+                </div>
               </div>
 
               {paymentMethod === 'MPESA' && (
-                <div className="ml-8 p-4 bg-gray-50 rounded">
-                  <label className="block text-sm font-medium mb-2">
-                    M-Pesa Phone Number
+                <div className="ml-8 p-4 bg-green-50 rounded-lg border border-green-100 animate-slideDown">
+                  <label className="block text-sm font-medium mb-2 text-gray-700">
+                    M-Pesa Phone Number *
                   </label>
-                  <input
-                    type="text"
-                    value={mpesaPhone}
-                    onChange={(e) => setMpesaPhone(e.target.value)}
-                    placeholder="e.g., 0712345678"
-                    className="w-full px-3 py-2 border rounded"
-                    required
-                  />
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={mpesaPhone}
+                      onChange={(e) => setMpesaPhone(e.target.value)}
+                      placeholder="0712345678"
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
+                      required
+                    />
+                    <button
+                      onClick={() => setMpesaPhone(user?.phone || '')}
+                      className="px-3 py-2 text-sm text-green-600 hover:text-green-800 font-medium whitespace-nowrap"
+                    >
+                      Use my number
+                    </button>
+                  </div>
                   <p className="text-sm text-gray-500 mt-2">
-                    You will receive an M-Pesa prompt to complete payment
+                    You will receive an M-Pesa STK Push prompt to complete payment. Ensure your phone is nearby.
                   </p>
                 </div>
               )}
 
-              <div className="flex items-center space-x-3">
-                <input
-                  type="radio"
-                  id="paypal"
-                  name="paymentMethod"
-                  value="PAYPAL"
-                  checked={paymentMethod === 'PAYPAL'}
-                  onChange={(e) => setPaymentMethod(e.target.value)}
-                  className="h-5 w-5"
-                />
-                <label htmlFor="paypal" className="flex-1">
-                  <div>
-                    <span className="font-medium">PayPal</span>
-                    <p className="text-sm text-gray-600">
-                      Pay with PayPal account or card
-                    </p>
-                  </div>
-                </label>
+              <div className={`flex items-center space-x-3 p-4 border rounded-lg cursor-pointer transition-all ${
+                paymentMethod === 'PAYPAL' ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'
+              }`} onClick={() => setPaymentMethod('PAYPAL')}>
+                <div className={`flex items-center justify-center w-6 h-6 rounded-full border ${
+                  paymentMethod === 'PAYPAL' ? 'border-blue-500 bg-blue-500' : 'border-gray-300'
+                }`}>
+                  {paymentMethod === 'PAYPAL' && (
+                    <div className="w-3 h-3 bg-white rounded-full"></div>
+                  )}
+                </div>
+                <div className="flex-1">
+                  <span className="font-medium text-gray-800">PayPal</span>
+                  <p className="text-sm text-gray-600">
+                    Pay with PayPal account or card
+                  </p>
+                </div>
               </div>
 
-              <div className="flex items-center space-x-3">
-                <input
-                  type="radio"
-                  id="card"
-                  name="paymentMethod"
-                  value="CARD"
-                  checked={paymentMethod === 'CARD'}
-                  onChange={(e) => setPaymentMethod(e.target.value)}
-                  className="h-5 w-5"
-                />
-                <label htmlFor="card" className="flex-1">
-                  <div>
-                    <span className="font-medium">Credit/Debit Card</span>
-                    <p className="text-sm text-gray-600">
-                      Visa, Mastercard, American Express
-                    </p>
-                  </div>
-                </label>
+              <div className={`flex items-center space-x-3 p-4 border rounded-lg cursor-pointer transition-all ${
+                paymentMethod === 'CARD' ? 'border-purple-500 bg-purple-50' : 'border-gray-200 hover:border-gray-300'
+              }`} onClick={() => setPaymentMethod('CARD')}>
+                <div className={`flex items-center justify-center w-6 h-6 rounded-full border ${
+                  paymentMethod === 'CARD' ? 'border-purple-500 bg-purple-500' : 'border-gray-300'
+                }`}>
+                  {paymentMethod === 'CARD' && (
+                    <div className="w-3 h-3 bg-white rounded-full"></div>
+                  )}
+                </div>
+                <div className="flex-1">
+                  <span className="font-medium text-gray-800">Credit/Debit Card</span>
+                  <p className="text-sm text-gray-600">
+                    Visa, Mastercard, American Express
+                  </p>
+                </div>
               </div>
 
-              <div className="flex items-center space-x-3">
-                <input
-                  type="radio"
-                  id="cod"
-                  name="paymentMethod"
-                  value="CASH_ON_DELIVERY"
-                  checked={paymentMethod === 'CASH_ON_DELIVERY'}
-                  onChange={(e) => setPaymentMethod(e.target.value)}
-                  className="h-5 w-5"
-                />
-                <label htmlFor="cod" className="flex-1">
-                  <div>
-                    <span className="font-medium">Cash on Delivery</span>
-                    <p className="text-sm text-gray-600">
-                      Pay when you receive your order
-                    </p>
-                  </div>
-                </label>
+              <div className={`flex items-center space-x-3 p-4 border rounded-lg cursor-pointer transition-all ${
+                paymentMethod === 'CASH_ON_DELIVERY' ? 'border-orange-500 bg-orange-50' : 'border-gray-200 hover:border-gray-300'
+              }`} onClick={() => setPaymentMethod('CASH_ON_DELIVERY')}>
+                <div className={`flex items-center justify-center w-6 h-6 rounded-full border ${
+                  paymentMethod === 'CASH_ON_DELIVERY' ? 'border-orange-500 bg-orange-500' : 'border-gray-300'
+                }`}>
+                  {paymentMethod === 'CASH_ON_DELIVERY' && (
+                    <div className="w-3 h-3 bg-white rounded-full"></div>
+                  )}
+                </div>
+                <div className="flex-1">
+                  <span className="font-medium text-gray-800">Cash on Delivery</span>
+                  <p className="text-sm text-gray-600">
+                    Pay when you receive your order (+KES 100 fee)
+                  </p>
+                </div>
               </div>
             </div>
           </div>
 
           {/* Order Notes */}
           <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-bold mb-4">Additional Information</h2>
+            <h2 className="text-xl font-bold mb-4 text-gray-800">Additional Information</h2>
             <div>
-              <label className="block text-sm font-medium mb-2">
+              <label className="block text-sm font-medium mb-2 text-gray-700">
                 Order Notes (Optional)
               </label>
               <textarea
                 name="customerNotes"
                 value={orderData.customerNotes}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border rounded"
+                className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
                 rows="4"
-                placeholder="Special instructions for delivery, gift messages, etc."
+                placeholder="Special instructions for delivery, access codes, gift messages, etc."
               />
+              <p className="text-sm text-gray-500 mt-2">
+                These notes will be shared with the delivery agent.
+              </p>
             </div>
           </div>
         </div>
@@ -493,34 +735,34 @@ const Checkout = () => {
         {/* Order Summary */}
         <div className="lg:w-1/3">
           <div className="bg-white rounded-lg shadow p-6 sticky top-6">
-            <h2 className="text-xl font-bold mb-6">Order Summary</h2>
+            <h2 className="text-xl font-bold mb-6 text-gray-800">Order Summary</h2>
 
             <div className="space-y-4 mb-6">
-              <div className="flex justify-between">
-                <span className="text-gray-600">Subtotal</span>
-                <span>KES {subtotal.toFixed(2)}</span>
+              <div className="flex justify-between py-2">
+                <span className="text-gray-600">Subtotal ({cartItems.length} items)</span>
+                <span className="font-medium">KES {subtotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </div>
-              <div className="flex justify-between">
+              <div className="flex justify-between py-2">
                 <span className="text-gray-600">Shipping</span>
-                <span>KES {shipping.toFixed(2)}</span>
+                <span className="font-medium">KES {shipping.toFixed(2)}</span>
               </div>
-              <div className="flex justify-between">
+              <div className="flex justify-between py-2">
                 <span className="text-gray-600">Tax (16%)</span>
-                <span>KES {tax.toFixed(2)}</span>
+                <span className="font-medium">KES {tax.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </div>
               <div className="border-t pt-4">
                 <div className="flex justify-between font-bold text-lg">
                   <span>Total</span>
-                  <span>KES {total.toFixed(2)}</span>
+                  <span className="text-green-600">KES {total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 </div>
               </div>
             </div>
 
             <div className="mb-6">
-              <h3 className="font-medium mb-3">Order Items</h3>
-              <div className="space-y-3 max-h-64 overflow-y-auto">
+              <h3 className="font-medium mb-3 text-gray-700">Order Items</h3>
+              <div className="space-y-3 max-h-64 overflow-y-auto pr-2">
                 {cartItems.map((item) => (
-                  <div key={item._id} className="flex items-center">
+                  <div key={item._id} className="flex items-center p-2 hover:bg-gray-50 rounded">
                     {item.images?.[0] && (
                       <img
                         src={item.images[0]}
@@ -528,38 +770,103 @@ const Checkout = () => {
                         className="w-12 h-12 object-cover rounded mr-3"
                       />
                     )}
-                    <div className="flex-1">
-                      <p className="text-sm font-medium truncate">{item.title}</p>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-800 truncate">{item.title}</p>
+                      {item.vendor?.businessName && (
+                        <p className="text-xs text-gray-500">by {item.vendor.businessName}</p>
+                      )}
                       <p className="text-xs text-gray-500">
-                        {item.quantity} × KES {item.price}
+                        {item.quantity} × KES {parseFloat(item.price).toFixed(2)}
                       </p>
                     </div>
-                    <p className="font-medium">
-                      KES {(item.price * item.quantity).toFixed(2)}
+                    <p className="font-medium text-gray-800 whitespace-nowrap">
+                      KES {(parseFloat(item.price) * item.quantity).toFixed(2)}
                     </p>
                   </div>
                 ))}
               </div>
             </div>
 
-            <div className="p-4 bg-blue-50 rounded-lg mb-6">
-              <h4 className="font-medium text-blue-800 mb-2">Delivery Estimate</h4>
+            <div className="p-4 bg-blue-50 rounded-lg mb-6 border border-blue-100">
+              <h4 className="font-medium text-blue-800 mb-2 flex items-center gap-2">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Delivery Estimate
+              </h4>
               <p className="text-sm text-blue-700">
                 Orders are typically delivered within 3-7 business days
+              </p>
+              <p className="text-xs text-blue-600 mt-1">
+                You'll receive tracking information once your order ships.
               </p>
             </div>
 
             <button
               onClick={handlePlaceOrder}
-              disabled={loading}
-              className="w-full py-3 bg-green-600 text-white rounded-lg font-bold text-lg hover:bg-green-700 disabled:opacity-50"
+              disabled={loading || processingPayment}
+              className={`w-full py-4 rounded-lg font-bold text-lg transition-all duration-300 ${
+                processingPayment 
+                  ? 'bg-yellow-500 hover:bg-yellow-600 text-white' 
+                  : loading 
+                    ? 'bg-gray-400 text-white cursor-not-allowed'
+                    : 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-lg hover:shadow-xl'
+              }`}
             >
-              {loading ? 'Processing...' : `Place Order - KES ${total.toFixed(2)}`}
+              {processingPayment ? (
+                <div className="flex items-center justify-center gap-2">
+                  <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
+                  Waiting for M-Pesa Payment...
+                </div>
+              ) : loading ? (
+                <div className="flex items-center justify-center gap-2">
+                  <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
+                  Processing Your Order...
+                </div>
+              ) : (
+                <div className="flex items-center justify-center gap-2">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  Place Order - KES {total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </div>
+              )}
             </button>
 
+            {processingPayment && (
+              <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg animate-pulse">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-3 h-3 bg-yellow-500 rounded-full animate-ping"></div>
+                  <p className="font-medium text-yellow-800">Waiting for M-Pesa Payment</p>
+                </div>
+                <p className="text-sm text-yellow-700 mb-3">
+                  ⏳ Please check your phone for the STK Push prompt and enter your M-Pesa PIN to complete payment.
+                </p>
+                <button
+                  onClick={cancelPayment}
+                  className="text-sm text-yellow-700 hover:text-yellow-900 font-medium"
+                >
+                  Cancel Payment
+                </button>
+              </div>
+            )}
+
             <p className="text-xs text-gray-500 mt-4 text-center">
-              By placing your order, you agree to our Terms of Service and Privacy Policy
+              By placing your order, you agree to our 
+              <a href="/terms" className="text-blue-600 hover:text-blue-800 mx-1">Terms of Service</a>
+              and
+              <a href="/privacy" className="text-blue-600 hover:text-blue-800 mx-1">Privacy Policy</a>
             </p>
+
+            {/* Security Badge */}
+            <div className="mt-6 pt-6 border-t border-gray-200">
+              <div className="flex items-center justify-center gap-3 text-gray-500">
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+                <span className="text-sm">Secure & Encrypted Payment</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
