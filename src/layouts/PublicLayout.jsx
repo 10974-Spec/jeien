@@ -9,12 +9,12 @@ import { useRole } from '../hooks/useRole'
 const Button = ({ children, variant = "default", size = "md", className = "", asChild = false, ...props }) => {
   const baseStyles = "inline-flex items-center justify-center rounded-lg font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none";
   const variants = {
-    default: "bg-orange-500 text-white hover:bg-orange-600",
+    default: "bg-blue-700 text-white hover:bg-blue-800",
     secondary: "bg-gray-200 text-gray-800 hover:bg-gray-300",
     destructive: "bg-red-500 text-white hover:bg-red-600",
     outline: "border border-gray-300 bg-white hover:bg-gray-50 hover:text-gray-900",
     ghost: "hover:bg-gray-100 hover:text-gray-900",
-    link: "text-orange-600 underline-offset-4 hover:underline",
+    link: "text-blue-700 underline-offset-4 hover:underline",
   };
   const sizes = {
     sm: "h-9 px-3 rounded-md text-sm",
@@ -40,7 +40,7 @@ const Input = ({ className, type = "text", ...props }) => {
   return (
     <input
       type={type}
-      className={`flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-gray-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
+      className={`flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-gray-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
       {...props}
     />
   );
@@ -49,7 +49,7 @@ const Input = ({ className, type = "text", ...props }) => {
 // Badge Component
 const Badge = ({ children, variant = "default", className = "" }) => {
   const variants = {
-    default: "bg-orange-500 text-white",
+    default: "bg-gradient-to-r from-blue-700 to-blue-800 text-white",
     secondary: "bg-gray-200 text-gray-800",
     destructive: "bg-red-500 text-white",
     outline: "text-gray-900 border border-gray-300",
@@ -123,14 +123,14 @@ const Header = ({ user, isAuthenticated, handleLogout, getDashboardPath }) => {
   return (
     <header className="sticky top-0 z-50 w-full">
       {/* Top Bar */}
-      <div className="bg-gray-900 text-white py-2 px-4">
+      <div className="bg-blue-900 text-white py-2 px-4">
         <div className="container mx-auto flex items-center justify-between text-sm">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-1">
               <MapPin className="h-3 w-3" />
               <span className="hidden sm:inline">Nairobi, Kenya</span>
             </div>
-            <span className="hidden md:inline text-gray-400">
+            <span className="hidden md:inline text-blue-200">
               Free delivery on orders over KSh 2,500
             </span>
           </div>
@@ -153,12 +153,12 @@ const Header = ({ user, isAuthenticated, handleLogout, getDashboardPath }) => {
                 className="flex items-center gap-2"
                 whileHover={{ scale: 1.02 }}
               >
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-r from-orange-500 to-pink-500 flex items-center justify-center">
-                  <span className="text-xl font-bold text-white">E</span>
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-r from-blue-700 to-blue-800 flex items-center justify-center">
+                  <span className="text-xl font-bold text-white">J</span>
                 </div>
                 <div className="hidden sm:block">
-                  <h1 className="text-xl font-bold text-gray-900">E-Shop</h1>
-                  <p className="text-xs text-gray-500">Multi-vendor Marketplace</p>
+                  <h1 className="text-xl font-bold text-blue-900">JEIEN</h1>
+                  <p className="text-xs text-gray-500">Premium Marketplace</p>
                 </div>
               </motion.div>
             </Link>
@@ -170,12 +170,12 @@ const Header = ({ user, isAuthenticated, handleLogout, getDashboardPath }) => {
                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <Input 
                     placeholder="Search for products, brands and more..."
-                    className="pl-11 pr-4 h-12 rounded-l-xl rounded-r-none border-r-0 bg-white focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    className="pl-11 pr-4 h-12 rounded-l-xl rounded-r-none border-r-0 bg-white focus:outline-none focus:ring-2 focus:ring-blue-600"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
                 </div>
-                <Button type="submit" className="h-12 px-6 rounded-l-none rounded-r-xl bg-orange-500 hover:bg-orange-600 text-white">
+                <Button type="submit" className="h-12 px-6 rounded-l-none rounded-r-xl bg-gradient-to-r from-blue-700 to-blue-800 hover:from-blue-800 hover:to-blue-900 text-white">
                   Search
                 </Button>
               </div>
@@ -186,7 +186,7 @@ const Header = ({ user, isAuthenticated, handleLogout, getDashboardPath }) => {
               <Button 
                 variant="ghost" 
                 size="icon" 
-                className="hidden sm:flex relative text-gray-600 hover:text-orange-600"
+                className="hidden sm:flex relative text-gray-600 hover:text-blue-700"
                 onClick={() => handleNavClick('/wishlist')}
               >
                 <Heart className="h-5 w-5" />
@@ -198,11 +198,11 @@ const Header = ({ user, isAuthenticated, handleLogout, getDashboardPath }) => {
               <Button 
                 variant="ghost" 
                 size="icon" 
-                className="relative text-gray-600 hover:text-orange-600"
+                className="relative text-gray-600 hover:text-blue-700"
                 onClick={() => handleNavClick('/cart')}
               >
                 <ShoppingCart className="h-5 w-5" />
-                <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-[10px] bg-orange-500 text-white">
+                <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-[10px] bg-gradient-to-r from-blue-700 to-blue-800 text-white">
                   0
                 </Badge>
               </Button>
@@ -213,7 +213,7 @@ const Header = ({ user, isAuthenticated, handleLogout, getDashboardPath }) => {
                     <Button 
                       variant="ghost" 
                       size="sm" 
-                      className="gap-2 text-gray-600 hover:text-orange-600"
+                      className="gap-2 text-gray-600 hover:text-blue-700"
                       onClick={handleAccountClick}
                     >
                       <User className="h-4 w-4" />
@@ -222,7 +222,7 @@ const Header = ({ user, isAuthenticated, handleLogout, getDashboardPath }) => {
                     <Button 
                       variant="ghost" 
                       size="sm" 
-                      className="gap-2 text-gray-600 hover:text-orange-600"
+                      className="gap-2 text-gray-600 hover:text-blue-700"
                       onClick={() => handleNavClick(getDashboardPath())}
                     >
                       <span className="hidden lg:inline">Dashboard</span>
@@ -240,7 +240,7 @@ const Header = ({ user, isAuthenticated, handleLogout, getDashboardPath }) => {
                   <Button 
                     variant="ghost" 
                     size="sm" 
-                    className="gap-2 text-gray-600 hover:text-orange-600"
+                    className="gap-2 text-gray-600 hover:text-blue-700"
                     onClick={handleAccountClick}
                   >
                     <User className="h-4 w-4" />
@@ -252,7 +252,7 @@ const Header = ({ user, isAuthenticated, handleLogout, getDashboardPath }) => {
               <Button 
                 variant="ghost" 
                 size="icon" 
-                className="md:hidden text-gray-600 hover:text-orange-600"
+                className="md:hidden text-gray-600 hover:text-blue-700"
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
               >
                 <Menu className="h-5 w-5" />
@@ -282,7 +282,7 @@ const Header = ({ user, isAuthenticated, handleLogout, getDashboardPath }) => {
           <div className="flex items-center gap-1">
             {/* Categories Dropdown */}
             <div className="relative group">
-              <Button className="gap-2 rounded-none h-12 bg-gradient-to-r from-orange-500 to-pink-500 text-white hover:from-orange-600 hover:to-pink-600">
+              <Button className="gap-2 rounded-none h-12 bg-gradient-to-r from-blue-700 to-blue-800 text-white hover:from-blue-800 hover:to-blue-900">
                 <Menu className="h-4 w-4" />
                 All Categories
                 <ChevronDown className="h-4 w-4" />
@@ -293,7 +293,7 @@ const Header = ({ user, isAuthenticated, handleLogout, getDashboardPath }) => {
                 {mainCategories.map((category) => (
                   <button
                     key={category.slug}
-                    className="w-full px-4 py-3 text-left text-gray-700 hover:bg-gray-50 hover:text-orange-600 flex items-center justify-between"
+                    className="w-full px-4 py-3 text-left text-gray-700 hover:bg-gray-50 hover:text-blue-700 flex items-center justify-between"
                     onClick={() => handleCategoryClick(category.slug)}
                   >
                     <span>{category.name}</span>
@@ -311,8 +311,8 @@ const Header = ({ user, isAuthenticated, handleLogout, getDashboardPath }) => {
                   variant="ghost" 
                   className={`rounded-none h-12 px-4 ${
                     location.pathname === item.path 
-                      ? 'text-orange-600 border-b-2 border-orange-600' 
-                      : 'text-gray-600 hover:text-orange-600'
+                      ? 'text-blue-700 border-b-2 border-blue-700' 
+                      : 'text-gray-600 hover:text-blue-700'
                   }`}
                   onClick={() => handleNavClick(item.path)}
                 >
@@ -323,7 +323,7 @@ const Header = ({ user, isAuthenticated, handleLogout, getDashboardPath }) => {
 
             {/* Deals Banner */}
             <Button 
-              className="ml-auto gap-2 text-sm rounded-full bg-gradient-to-r from-orange-500 to-pink-500 text-white hover:from-orange-600 hover:to-pink-600"
+              className="ml-auto gap-2 text-sm rounded-full bg-gradient-to-r from-blue-700 to-blue-800 text-white hover:from-blue-800 hover:to-blue-900"
               onClick={() => handleNavClick('/deals')}
             >
               🔥 Hot Deals
@@ -346,7 +346,7 @@ const Header = ({ user, isAuthenticated, handleLogout, getDashboardPath }) => {
             {navLinks.map((item) => (
               <button
                 key={item.name}
-                className="w-full px-4 py-3 text-left text-gray-700 hover:bg-gray-50 hover:text-orange-600 rounded-lg"
+                className="w-full px-4 py-3 text-left text-gray-700 hover:bg-gray-50 hover:text-blue-700 rounded-lg"
                 onClick={() => handleNavClick(item.path)}
               >
                 {item.name}
@@ -358,7 +358,7 @@ const Header = ({ user, isAuthenticated, handleLogout, getDashboardPath }) => {
               {mainCategories.map((category) => (
                 <button
                   key={category.slug}
-                  className="w-full px-4 py-2 text-left text-gray-600 hover:bg-gray-50 hover:text-orange-600"
+                  className="w-full px-4 py-2 text-left text-gray-600 hover:bg-gray-50 hover:text-blue-700"
                   onClick={() => handleCategoryClick(category.slug)}
                 >
                   {category.name}
@@ -370,19 +370,19 @@ const Header = ({ user, isAuthenticated, handleLogout, getDashboardPath }) => {
               {isAuthenticated ? (
                 <>
                   <button
-                    className="w-full px-4 py-3 text-left text-gray-700 hover:bg-gray-50 hover:text-orange-600 rounded-lg"
+                    className="w-full px-4 py-3 text-left text-gray-700 hover:bg-gray-50 hover:text-blue-700 rounded-lg"
                     onClick={handleAccountClick}
                   >
                     Profile
                   </button>
                   <button
-                    className="w-full px-4 py-3 text-left text-gray-700 hover:bg-gray-50 hover:text-orange-600 rounded-lg"
+                    className="w-full px-4 py-3 text-left text-gray-700 hover:bg-gray-50 hover:text-blue-700 rounded-lg"
                     onClick={() => handleNavClick('/cart')}
                   >
                     Cart
                   </button>
                   <button
-                    className="w-full px-4 py-3 text-left text-gray-700 hover:bg-gray-50 hover:text-orange-600 rounded-lg"
+                    className="w-full px-4 py-3 text-left text-gray-700 hover:bg-gray-50 hover:text-blue-700 rounded-lg"
                     onClick={() => handleNavClick(getDashboardPath())}
                   >
                     Dashboard
@@ -397,13 +397,13 @@ const Header = ({ user, isAuthenticated, handleLogout, getDashboardPath }) => {
               ) : (
                 <>
                   <button
-                    className="w-full px-4 py-3 text-left text-gray-700 hover:bg-gray-50 hover:text-orange-600 rounded-lg"
+                    className="w-full px-4 py-3 text-left text-gray-700 hover:bg-gray-50 hover:text-blue-700 rounded-lg"
                     onClick={() => handleNavClick('/login')}
                   >
                     Sign In
                   </button>
                   <button
-                    className="w-full px-4 py-3 text-left text-gray-700 hover:bg-gray-50 hover:text-orange-600 rounded-lg"
+                    className="w-full px-4 py-3 text-left text-gray-700 hover:bg-gray-50 hover:text-blue-700 rounded-lg"
                     onClick={() => handleNavClick('/register')}
                   >
                     Register
@@ -442,37 +442,42 @@ const PublicLayout = ({ children }) => {
         <Outlet />
       </main>
 
-      <footer className="bg-gray-800 text-white py-8">
+      <footer className="bg-blue-900 text-white py-8">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div>
-              <h3 className="text-lg font-bold mb-4">E-Shop</h3>
-              <p className="text-gray-400">Multi-vendor marketplace</p>
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-blue-700 to-blue-800 flex items-center justify-center">
+                  <span className="text-lg font-bold text-white">J</span>
+                </div>
+                <h3 className="text-lg font-bold">JEIEN</h3>
+              </div>
+              <p className="text-blue-200">Premium Marketplace</p>
             </div>
             <div>
-              <h4 className="font-bold mb-4">Quick Links</h4>
+              <h4 className="font-bold mb-4 text-white">Quick Links</h4>
               <ul className="space-y-2">
-                <li><Link to="/" className="text-gray-400 hover:text-white">Home</Link></li>
-                <li><Link to="/search" className="text-gray-400 hover:text-white">Shop</Link></li>
-                <li><Link to="/profile" className="text-gray-400 hover:text-white">My Account</Link></li>
+                <li><Link to="/" className="text-blue-200 hover:text-white">Home</Link></li>
+                <li><Link to="/search" className="text-blue-200 hover:text-white">Shop</Link></li>
+                <li><Link to="/profile" className="text-blue-200 hover:text-white">My Account</Link></li>
               </ul>
             </div>
             <div>
-              <h4 className="font-bold mb-4">Legal</h4>
+              <h4 className="font-bold mb-4 text-white">Legal</h4>
               <ul className="space-y-2">
-                <li><a href="#" className="text-gray-400 hover:text-white">Terms of Service</a></li>
-                <li><a href="#" className="text-gray-400 hover:text-white">Privacy Policy</a></li>
-                <li><a href="#" className="text-gray-400 hover:text-white">Refund Policy</a></li>
+                <li><a href="#" className="text-blue-200 hover:text-white">Terms of Service</a></li>
+                <li><a href="#" className="text-blue-200 hover:text-white">Privacy Policy</a></li>
+                <li><a href="#" className="text-blue-200 hover:text-white">Refund Policy</a></li>
               </ul>
             </div>
             <div>
-              <h4 className="font-bold mb-4">Contact</h4>
-              <p className="text-gray-400">support@eshop.com</p>
-              <p className="text-gray-400">+254 700 000 000</p>
+              <h4 className="font-bold mb-4 text-white">Contact</h4>
+              <p className="text-blue-200">support@jeien.com</p>
+              <p className="text-blue-200">+254 700 000 000</p>
             </div>
           </div>
-          <div className="border-t border-gray-700 mt-8 pt-8 text-center text-gray-400">
-            <p>© 2024 E-Shop. All rights reserved.</p>
+          <div className="border-t border-blue-800 mt-8 pt-8 text-center text-blue-300">
+            <p>© 2024 JEIEN. All rights reserved.</p>
           </div>
         </div>
       </footer>

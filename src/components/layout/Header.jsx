@@ -10,12 +10,12 @@ import { useWishlist } from "../../hooks/useWishlist";
 const Button = ({ children, variant = "default", size = "md", className = "", asChild = false, ...props }) => {
   const baseStyles = "inline-flex items-center justify-center rounded-lg font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none";
   const variants = {
-    default: "bg-orange-500 text-white hover:bg-orange-600",
+    default: "bg-blue-700 text-white hover:bg-blue-800",
     secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
     destructive: "bg-red-500 text-white hover:bg-red-600",
     outline: "border border-gray-300 bg-white hover:bg-gray-50 hover:text-gray-900",
     ghost: "hover:bg-gray-100 hover:text-gray-900",
-    link: "text-orange-600 underline-offset-4 hover:underline",
+    link: "text-blue-700 underline-offset-4 hover:underline",
   };
   const sizes = {
     sm: "h-9 px-3 rounded-md text-sm",
@@ -41,7 +41,7 @@ const Input = ({ className, type = "text", ...props }) => {
   return (
     <input
       type={type}
-      className={`flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm ring-offset-white file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-gray-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
+      className={`flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm ring-offset-white file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-gray-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
       {...props}
     />
   );
@@ -50,7 +50,7 @@ const Input = ({ className, type = "text", ...props }) => {
 // Badge Component
 const Badge = ({ children, variant = "default", className = "" }) => {
   const variants = {
-    default: "bg-orange-500 text-white",
+    default: "bg-gradient-to-r from-blue-700 to-blue-800 text-white",
     secondary: "bg-gray-200 text-gray-800",
     destructive: "bg-red-500 text-white",
     outline: "text-gray-800 border border-gray-300",
@@ -149,14 +149,14 @@ export const Header = () => {
   return (
     <header className="sticky top-0 z-50 w-full bg-white shadow-sm">
       {/* Top Bar */}
-      <div className="bg-gray-900 text-white py-2 px-4 hidden md:block">
+      <div className="bg-blue-900 text-white py-2 px-4 hidden md:block">
         <div className="container mx-auto flex items-center justify-between text-sm">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-1">
               <MapPin className="h-3 w-3" />
               <span>Nairobi, Kenya</span>
             </div>
-            <span className="text-gray-400">
+            <span className="text-blue-200">
               Free delivery on orders over KSh 2,500
             </span>
           </div>
@@ -166,9 +166,9 @@ export const Header = () => {
               <span>+254 700 123 456</span>
             </div>
             {isAuthenticated ? (
-              <span className="text-gray-300">Welcome, {user?.name?.split(' ')[0] || 'User'}!</span>
+              <span className="text-blue-200">Welcome, {user?.name?.split(' ')[0] || 'User'}!</span>
             ) : (
-              <Link to="/login" className="text-orange-400 hover:text-orange-300 transition-colors">
+              <Link to="/login" className="text-blue-300 hover:text-blue-200 transition-colors">
                 Sign In / Register
               </Link>
             )}
@@ -186,12 +186,12 @@ export const Header = () => {
                 className="flex items-center gap-2"
                 whileHover={{ scale: 1.02 }}
               >
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-r from-orange-500 to-pink-500 flex items-center justify-center">
-                  <span className="text-xl font-bold text-white">F</span>
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-r from-blue-700 to-blue-800 flex items-center justify-center">
+                  <span className="text-xl font-bold text-white">J</span>
                 </div>
                 <div className="hidden sm:block">
-                  <h1 className="text-xl font-bold text-gray-900">Frucap</h1>
-                  <p className="text-xs text-gray-500">Fresh • Fast • Fair</p>
+                  <h1 className="text-xl font-bold text-blue-900">JEIEN</h1>
+                  <p className="text-xs text-gray-500">Premium • Quality • Trusted</p>
                 </div>
               </motion.div>
             </Link>
@@ -203,12 +203,12 @@ export const Header = () => {
                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <Input 
                     placeholder="Search for products, brands and more..."
-                    className="pl-11 pr-4 h-12 rounded-l-xl rounded-r-none border-r-0 bg-white focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    className="pl-11 pr-4 h-12 rounded-l-xl rounded-r-none border-r-0 bg-white focus:outline-none focus:ring-2 focus:ring-blue-600"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
                 </div>
-                <Button type="submit" className="h-12 px-6 rounded-l-none rounded-r-xl bg-orange-500 hover:bg-orange-600 text-white">
+                <Button type="submit" className="h-12 px-6 rounded-l-none rounded-r-xl bg-gradient-to-r from-blue-700 to-blue-800 hover:from-blue-800 hover:to-blue-900 text-white">
                   Search
                 </Button>
               </div>
@@ -226,7 +226,7 @@ export const Header = () => {
                 <Link to="/wishlist" onClick={() => setIsMenuOpen(false)}>
                   <Heart className="h-5 w-5 text-gray-600" />
                   {wishlistCount > 0 && (
-                    <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-[10px] bg-red-500 text-white">
+                    <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-[10px] bg-gradient-to-r from-blue-700 to-blue-800 text-white">
                       {wishlistCount > 9 ? '9+' : wishlistCount}
                     </Badge>
                   )}
@@ -243,7 +243,7 @@ export const Header = () => {
                 <Link to="/cart" onClick={() => setIsMenuOpen(false)}>
                   <ShoppingCart className="h-5 w-5 text-gray-600" />
                   {cartCount > 0 && (
-                    <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-[10px] bg-orange-500 text-white">
+                    <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-[10px] bg-gradient-to-r from-blue-700 to-blue-800 text-white">
                       {cartCount > 9 ? '9+' : cartCount}
                     </Badge>
                   )}
@@ -255,7 +255,7 @@ export const Header = () => {
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  className="gap-2 text-gray-600"
+                  className="gap-2 text-gray-600 hover:text-blue-700"
                   onClick={handleProfileClick}
                 >
                   <User className="h-4 w-4" />
@@ -325,7 +325,7 @@ export const Header = () => {
                         <p className="text-sm text-gray-600 mb-3">Sign in to access your account</p>
                         <div className="space-y-2">
                           <Button 
-                            className="w-full" 
+                            className="w-full bg-gradient-to-r from-blue-700 to-blue-800 hover:from-blue-800 hover:to-blue-900" 
                             size="sm"
                             onClick={() => {
                               setIsProfileMenuOpen(false);
@@ -336,7 +336,7 @@ export const Header = () => {
                           </Button>
                           <Button 
                             variant="outline" 
-                            className="w-full" 
+                            className="w-full border-blue-700 text-blue-700 hover:bg-blue-50" 
                             size="sm"
                             onClick={() => {
                               setIsProfileMenuOpen(false);
@@ -356,7 +356,7 @@ export const Header = () => {
               <Button 
                 variant="ghost" 
                 size="icon" 
-                className="md:hidden text-gray-600"
+                className="md:hidden text-gray-600 hover:text-blue-700"
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
               >
                 <Menu className="h-5 w-5" />
@@ -383,7 +383,7 @@ export const Header = () => {
       <nav className="bg-white border-b border-gray-200 hidden lg:block">
         <div className="container mx-auto px-4">
           <div className="flex items-center gap-1">
-            <Button className="gap-2 rounded-none h-12 bg-gradient-to-r from-orange-500 to-pink-500 text-white hover:from-orange-600 hover:to-pink-600" asChild>
+            <Button className="gap-2 rounded-none h-12 bg-gradient-to-r from-blue-700 to-blue-800 text-white hover:from-blue-800 hover:to-blue-900" asChild>
               <Link to="/categories">
                 <Menu className="h-4 w-4" />
                 All Categories
@@ -396,7 +396,7 @@ export const Header = () => {
                 <Button 
                   key={item.name} 
                   variant="ghost" 
-                  className={`rounded-none h-12 px-4 ${location.pathname === item.path ? 'text-orange-600 bg-orange-50' : 'text-gray-600 hover:text-orange-600'}`} 
+                  className={`rounded-none h-12 px-4 ${location.pathname === item.path ? 'text-blue-700 bg-blue-50' : 'text-gray-600 hover:text-blue-700'}`} 
                   asChild
                 >
                   <Link to={item.path}>{item.name}</Link>
@@ -405,7 +405,7 @@ export const Header = () => {
             </div>
 
             <Link to="/search?deals=true" className="ml-auto flex items-center gap-2 text-sm hover:opacity-80 transition-opacity">
-              <Badge className="bg-gradient-to-r from-orange-500 to-pink-500 text-white">
+              <Badge className="bg-gradient-to-r from-blue-700 to-blue-800 text-white">
                 🔥 Hot Deals
               </Badge>
               <span className="text-gray-500">Up to 50% off on selected items</span>
@@ -428,7 +428,7 @@ export const Header = () => {
               <Button 
                 key={item.name} 
                 variant="ghost" 
-                className="w-full justify-start text-gray-600 hover:text-orange-600" 
+                className="w-full justify-start text-gray-600 hover:text-blue-700" 
                 asChild
                 onClick={() => setIsMenuOpen(false)}
               >
@@ -443,7 +443,7 @@ export const Header = () => {
                 <Button 
                   key={cat.name} 
                   variant="ghost" 
-                  className="w-full justify-start text-gray-600 hover:text-orange-600 text-sm" 
+                  className="w-full justify-start text-gray-600 hover:text-blue-700 text-sm" 
                   asChild
                   onClick={() => setIsMenuOpen(false)}
                 >
@@ -462,7 +462,7 @@ export const Header = () => {
                   </div>
                   <Button 
                     variant="ghost" 
-                    className="w-full justify-start text-gray-600 hover:text-orange-600" 
+                    className="w-full justify-start text-gray-600 hover:text-blue-700" 
                     asChild 
                     onClick={() => setIsMenuOpen(false)}
                   >
@@ -470,7 +470,7 @@ export const Header = () => {
                   </Button>
                   <Button 
                     variant="ghost" 
-                    className="w-full justify-start text-gray-600 hover:text-orange-600" 
+                    className="w-full justify-start text-gray-600 hover:text-blue-700" 
                     asChild 
                     onClick={() => setIsMenuOpen(false)}
                   >
@@ -478,7 +478,7 @@ export const Header = () => {
                   </Button>
                   <Button 
                     variant="ghost" 
-                    className="w-full justify-start text-gray-600 hover:text-orange-600" 
+                    className="w-full justify-start text-gray-600 hover:text-blue-700" 
                     asChild 
                     onClick={() => setIsMenuOpen(false)}
                   >
@@ -489,7 +489,7 @@ export const Header = () => {
                   {user?.role === 'vendor' && (
                     <Button 
                       variant="ghost" 
-                      className="w-full justify-start text-gray-600 hover:text-orange-600" 
+                      className="w-full justify-start text-gray-600 hover:text-blue-700" 
                       asChild 
                       onClick={() => setIsMenuOpen(false)}
                     >
@@ -499,7 +499,7 @@ export const Header = () => {
                   {user?.role === 'admin' && (
                     <Button 
                       variant="ghost" 
-                      className="w-full justify-start text-gray-600 hover:text-orange-600" 
+                      className="w-full justify-start text-gray-600 hover:text-blue-700" 
                       asChild 
                       onClick={() => setIsMenuOpen(false)}
                     >
@@ -518,7 +518,7 @@ export const Header = () => {
                 <>
                   <Button 
                     variant="ghost" 
-                    className="w-full justify-start text-gray-600 hover:text-orange-600" 
+                    className="w-full justify-start text-gray-600 hover:text-blue-700" 
                     asChild 
                     onClick={() => setIsMenuOpen(false)}
                   >
@@ -526,7 +526,7 @@ export const Header = () => {
                   </Button>
                   <Button 
                     variant="ghost" 
-                    className="w-full justify-start text-gray-600 hover:text-orange-600" 
+                    className="w-full justify-start text-gray-600 hover:text-blue-700" 
                     asChild 
                     onClick={() => setIsMenuOpen(false)}
                   >
