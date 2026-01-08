@@ -167,7 +167,7 @@ const AdminProducts = () => {
   const fetchCategories = async () => {
     try {
       setLoadingCategories(true)
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/categories`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'https://jeien-backend.onrender.com//api'}/categories`, {
         headers: {
           'Authorization': localStorage.getItem('token') ? `Bearer ${localStorage.getItem('token')}` : '',
           'Content-Type': 'application/json'
