@@ -100,7 +100,7 @@ const Login = () => {
                 required
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200"
+                className="w-full px-4 py-3 border border-gray-200 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all duration-200"
                 placeholder="you@example.com"
               />
             </div>
@@ -112,7 +112,7 @@ const Login = () => {
                 </label>
                 <Link
                   to="/forgot-password"
-                  className="text-sm font-medium text-orange-600 hover:text-orange-500 transition-colors duration-200"
+                  className="text-sm font-medium text-blue-700 hover:text-blue-600 transition-colors duration-200"
                 >
                   Forgot password?
                 </Link>
@@ -125,7 +125,7 @@ const Login = () => {
                 required
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200"
+                className="w-full px-4 py-3 border border-gray-200 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all duration-200"
                 placeholder="••••••••"
               />
             </div>
@@ -135,7 +135,7 @@ const Login = () => {
                 id="remember-me"
                 name="remember-me"
                 type="checkbox"
-                className="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300 rounded transition duration-200"
+                className="h-4 w-4 text-blue-700 focus:ring-blue-600 border-gray-300 rounded transition duration-200"
               />
               <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700">
                 Keep me signed in
@@ -145,7 +145,7 @@ const Login = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full flex justify-center items-center py-3.5 px-4 border border-transparent rounded-full shadow-sm text-sm font-semibold text-white bg-gradient-to-r from-orange-600 to-pink-500 hover:from-orange-700 hover:to-pink-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:-translate-y-0.5 hover:shadow-md"
+              className="w-full flex justify-center items-center py-3.5 px-4 border border-transparent rounded-full shadow-sm text-sm font-semibold text-white bg-gradient-to-r from-blue-700 to-blue-800 hover:from-blue-800 hover:to-blue-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:-translate-y-0.5 hover:shadow-md"
             >
               {loading ? (
                 <>
@@ -200,10 +200,10 @@ const Login = () => {
 
           <div className="mt-8 text-center">
             <p className="text-sm text-gray-600">
-              New to Frucap?{' '}
+              New to JEIEN?{' '}
               <Link
                 to="/register"
-                className="font-semibold text-orange-600 hover:text-orange-500 transition-colors duration-200"
+                className="font-semibold text-blue-700 hover:text-blue-600 transition-colors duration-200"
               >
                 Create your free account
               </Link>
@@ -212,7 +212,7 @@ const Login = () => {
 
           <div className="mt-8 text-center">
             <p className="text-xs text-gray-500">
-              By continuing, you agree to Frucap Investments'{' '}
+              By continuing, you agree to JEIEN's{' '}
               <a href="#" className="font-medium text-gray-700 hover:text-gray-900 transition-colors duration-200">
                 Terms of Service
               </a>{' '}
@@ -226,19 +226,36 @@ const Login = () => {
       </div>
 
       {/* Right Section - Logo and Company Name */}
-      <div className="hidden lg:flex flex-1 bg-gradient-to-br from-orange-50 to-pink-50 relative overflow-hidden">
+      <div className="hidden lg:flex flex-1 bg-gradient-to-br from-blue-50 to-blue-100 relative overflow-hidden">
         <div className="relative z-10 flex flex-col justify-center items-center w-full px-16 py-12">
           <div className="max-w-lg text-center">
             <div className="mb-8">
-              <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-orange-600 to-pink-600 flex items-center justify-center shadow-2xl mb-6 mx-auto">
+              <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-blue-700 to-blue-800 flex items-center justify-center shadow-2xl mb-6 mx-auto">
                 <ShoppingBag className="w-12 h-12 text-white" />
               </div>
-              <h1 className="text-6xl font-bold text-gray-900 mb-3">
-                Frucap
+              <h1 className="text-6xl font-bold text-blue-900 mb-3">
+                JEIEN
               </h1>
               <p className="text-2xl text-gray-700">
-                Investments
+                Premium Marketplace
               </p>
+            </div>
+            
+            <div className="mt-12">
+              <div className="space-y-4">
+                <div className="flex items-center justify-center gap-3 text-gray-600">
+                  <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+                  <p className="text-lg">Premium Quality Products</p>
+                </div>
+                <div className="flex items-center justify-center gap-3 text-gray-600">
+                  <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+                  <p className="text-lg">Secure & Fast Delivery</p>
+                </div>
+                <div className="flex items-center justify-center gap-3 text-gray-600">
+                  <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+                  <p className="text-lg">24/7 Customer Support</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>

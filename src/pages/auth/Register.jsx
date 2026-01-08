@@ -85,7 +85,7 @@ const Register = () => {
           <div className="mb-10">
             <div className="mb-4">
               <h1 className="text-3xl font-bold text-gray-900">Create your account</h1>
-              <p className="text-gray-600 mt-2">Join Frucap Investments and start shopping today</p>
+              <p className="text-gray-600 mt-2">Join JEIEN Premium Marketplace and start shopping today</p>
             </div>
           </div>
 
@@ -108,7 +108,7 @@ const Register = () => {
                 required
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200"
+                className="w-full px-4 py-3 border border-gray-200 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all duration-200"
                 placeholder="John Doe"
               />
             </div>
@@ -125,7 +125,7 @@ const Register = () => {
                 required
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200"
+                className="w-full px-4 py-3 border border-gray-200 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all duration-200"
                 placeholder="you@example.com"
               />
             </div>
@@ -141,7 +141,7 @@ const Register = () => {
                 autoComplete="tel"
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200"
+                className="w-full px-4 py-3 border border-gray-200 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all duration-200"
                 placeholder="e.g., 0712345678"
               />
             </div>
@@ -155,7 +155,7 @@ const Register = () => {
                 name="role"
                 value={formData.role}
                 onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200"
+                className="w-full px-4 py-3 border border-gray-200 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all duration-200"
               >
                 <option value="BUYER">Buyer (Shop only)</option>
                 <option value="VENDOR">Vendor (Sell products)</option>
@@ -163,7 +163,7 @@ const Register = () => {
             </div>
 
             {formData.role === 'VENDOR' && (
-              <div className="space-y-4 p-6 border border-gray-200 rounded-2xl bg-orange-50/30">
+              <div className="space-y-4 p-6 border border-gray-200 rounded-2xl bg-blue-50/30">
                 <h3 className="font-semibold text-gray-900 flex items-center gap-2">
                   <UserPlus className="w-4 h-4" />
                   Vendor Information
@@ -176,7 +176,7 @@ const Register = () => {
                     type="text"
                     value={vendorInfo.storeName}
                     onChange={(e) => setVendorInfo({ ...vendorInfo, storeName: e.target.value })}
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all duration-200"
                     required
                     placeholder="Your store name"
                   />
@@ -188,7 +188,7 @@ const Register = () => {
                   <textarea
                     value={vendorInfo.description}
                     onChange={(e) => setVendorInfo({ ...vendorInfo, description: e.target.value })}
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all duration-200"
                     rows="3"
                     placeholder="Tell customers about your store..."
                   />
@@ -208,7 +208,7 @@ const Register = () => {
                 required
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200"
+                className="w-full px-4 py-3 border border-gray-200 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all duration-200"
                 placeholder="••••••••"
               />
               <p className="mt-2 text-xs text-gray-500">
@@ -228,7 +228,7 @@ const Register = () => {
                 required
                 value={formData.confirmPassword}
                 onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200"
+                className="w-full px-4 py-3 border border-gray-200 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all duration-200"
                 placeholder="••••••••"
               />
             </div>
@@ -239,15 +239,15 @@ const Register = () => {
                 name="terms"
                 type="checkbox"
                 required
-                className="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300 rounded transition duration-200 mt-1"
+                className="h-4 w-4 text-blue-700 focus:ring-blue-600 border-gray-300 rounded transition duration-200 mt-1"
               />
               <label htmlFor="terms" className="ml-2 block text-sm text-gray-700">
-                I agree to Frucap Investments'{' '}
-                <a href="#" className="font-medium text-orange-600 hover:text-orange-500 transition-colors duration-200">
+                I agree to JEIEN's{' '}
+                <a href="#" className="font-medium text-blue-700 hover:text-blue-600 transition-colors duration-200">
                   Terms of Service
                 </a>{' '}
                 and{' '}
-                <a href="#" className="font-medium text-orange-600 hover:text-orange-500 transition-colors duration-200">
+                <a href="#" className="font-medium text-blue-700 hover:text-blue-600 transition-colors duration-200">
                   Privacy Policy
                 </a>
               </label>
@@ -256,7 +256,7 @@ const Register = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full flex justify-center items-center py-3.5 px-4 border border-transparent rounded-full shadow-sm text-sm font-semibold text-white bg-gradient-to-r from-orange-600 to-pink-500 hover:from-orange-700 hover:to-pink-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:-translate-y-0.5 hover:shadow-md"
+              className="w-full flex justify-center items-center py-3.5 px-4 border border-transparent rounded-full shadow-sm text-sm font-semibold text-white bg-gradient-to-r from-blue-700 to-blue-800 hover:from-blue-800 hover:to-blue-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:-translate-y-0.5 hover:shadow-md"
             >
               {loading ? (
                 <>
@@ -312,7 +312,7 @@ const Register = () => {
               Already have an account?{' '}
               <Link
                 to="/login"
-                className="font-semibold text-orange-600 hover:text-orange-500 transition-colors duration-200"
+                className="font-semibold text-blue-700 hover:text-blue-600 transition-colors duration-200"
               >
                 Sign in here
               </Link>
@@ -321,7 +321,7 @@ const Register = () => {
 
           <div className="mt-8 text-center">
             <p className="text-xs text-gray-500">
-              By creating an account, you agree to Frucap Investments'{' '}
+              By creating an account, you agree to JEIEN's{' '}
               <a href="#" className="font-medium text-gray-700 hover:text-gray-900 transition-colors duration-200">
                 Terms of Service
               </a>{' '}
@@ -335,18 +335,18 @@ const Register = () => {
       </div>
 
       {/* Right Section - Logo and Company Name */}
-      <div className="hidden lg:flex flex-1 bg-gradient-to-br from-orange-50 to-pink-50 relative overflow-hidden">
+      <div className="hidden lg:flex flex-1 bg-gradient-to-br from-blue-50 to-blue-100 relative overflow-hidden">
         <div className="relative z-10 flex flex-col justify-center items-center w-full px-16 py-12">
           <div className="max-w-lg text-center">
             <div className="mb-8">
-              <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-orange-600 to-pink-600 flex items-center justify-center shadow-2xl mb-6 mx-auto">
+              <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-blue-700 to-blue-800 flex items-center justify-center shadow-2xl mb-6 mx-auto">
                 <ShoppingBag className="w-12 h-12 text-white" />
               </div>
-              <h1 className="text-6xl font-bold text-gray-900 mb-3">
-                Frucap
+              <h1 className="text-6xl font-bold text-blue-900 mb-3">
+                JEIEN
               </h1>
               <p className="text-2xl text-gray-700">
-                Investments
+                Premium Marketplace
               </p>
             </div>
             
@@ -357,7 +357,7 @@ const Register = () => {
               
               <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white/20">
                 <p className="text-lg text-gray-700">
-                  "Creating an account with Frucap was the best decision. Now I can shop securely and track all my orders in one place!"
+                  "Creating an account with JEIEN was the best decision. Now I can shop securely and track all my orders in one place!"
                 </p>
                 <p className="text-gray-600 mt-4">— Sarah M., Premium Member</p>
               </div>
