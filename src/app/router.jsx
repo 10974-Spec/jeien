@@ -26,6 +26,8 @@ import VendorStoreSettings from '../pages/vendor/StoreSettings'
 import VendorPayments from '../pages/vendor/Payments'
 
 import Home from '../pages/buyer/Home'
+import Shop from '../pages/buyer/Shop' // Import the Shop page
+import About from '../pages/buyer/About' // Import the About page
 import Category from '../pages/buyer/Category'
 import ProductDetails from '../pages/buyer/ProductDetails'
 import Cart from '../pages/buyer/Cart'
@@ -136,12 +138,30 @@ function AppRouter() {
       {/* Buyer/Public Routes */}
       <Route path="/" element={<BuyerRoutes />}>
         <Route index element={<Home />} />
+        <Route path="shop" element={<Shop />} /> {/* Add Shop route */}
+        <Route path="about" element={<About />} /> {/* Add About route */}
         <Route path="category/:id" element={<Category />} />
         <Route path="product/:id" element={<ProductDetails />} />
         <Route path="cart" element={<Cart />} />
         <Route path="checkout" element={<Checkout />} />
         <Route path="profile" element={<BuyerProfile />} />
         <Route path="orders" element={<BuyerOrders />} />
+        
+        {/* Add search redirect to shop page */}
+        <Route path="search" element={<Navigate to="/shop" replace />} />
+        
+        {/* Add vendors page (you can create this later) */}
+        <Route path="vendors" element={
+          <div className="min-h-screen flex items-center justify-center">
+            <div className="text-center">
+              <h1 className="text-2xl font-bold text-gray-900 mb-2">Vendors Page</h1>
+              <p className="text-gray-600">Coming soon...</p>
+            </div>
+          </div>
+        } />
+        
+        {/* Add deals redirect to shop with deals filter */}
+        <Route path="deals" element={<Navigate to="/shop?deals=true" replace />} />
       </Route>
 
       {/* 404 - Catch all */}

@@ -91,6 +91,61 @@ class ProductService {
     }
   }
 
+  // Create product
+  async createProduct(formData) {
+    try {
+      const response = await api.post('/products', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+
+      // Clear cache for products to reflect new addition
+      this.clearCache();
+      
+      return response;
+    } catch (error) {
+      console.error('Failed to create product:', error.message);
+      throw error;
+    }
+  }
+
+  // Update product
+  async updateProduct(id, formData) {
+    try {
+      const response = await api.put(`/products/${id}`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+
+      // Clear cache for this product and products list
+      this.cache.delete(`product:${id}`);
+      this.clearCache();
+      
+      return response;
+    } catch (error) {
+      console.error(`Failed to update product ${id}:`, error.message);
+      throw error;
+    }
+  }
+
+  // Delete product
+  async deleteProduct(id) {
+    try {
+      const response = await api.delete(`/products/${id}`);
+
+      // Clear cache for this product and products list
+      this.cache.delete(`product:${id}`);
+      this.clearCache();
+      
+      return response;
+    } catch (error) {
+      console.error(`Failed to delete product ${id}:`, error.message);
+      throw error;
+    }
+  }
+
   // Get featured products
   async getFeaturedProducts(limit = 12) {
     return this.getAllProducts({
@@ -206,6 +261,44 @@ class ProductService {
     } catch (error) {
       console.error(`Failed to get related products for ${productId}:`, error);
       return { data: [] };
+    }
+  }
+
+  // Get vendor products
+  async getVendorProducts(params = {}) {
+    try {
+      const response = await api.get('/products/vendor/my', {
+        params,
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      return response;
+    } catch (error) {
+      console.error('Failed to fetch vendor products:', error.message);
+      throw error;
+    }
+  }
+
+  // Update product stock
+  async updateProductStock(id, stockData) {
+    try {
+      const response = await api.put(`/products/${id}/stock`, stockData);
+      return response;
+    } catch (error) {
+      console.error(`Failed to update stock for product ${id}:`, error.message);
+      throw error;
+    }
+  }
+
+  // Bulk update products
+  async bulkUpdateProducts(ids, updates) {
+    try {
+      const response = await api.put('/products/bulk/update', { ids, updates });
+      return response;
+    } catch (error) {
+      console.error('Failed to bulk update products:', error.message);
+      throw error;
     }
   }
 }

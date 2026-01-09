@@ -739,8 +739,8 @@ const FeaturedProducts = ({ products, loading }) => {
   )
 }
 
-// Promo Banner Component
-const PromoBanner = ({ banners, loading }) => {
+// Promo Banner Component - UPDATED TO HANDLE POSITIONS
+const PromoBanner = ({ banners, loading, position = null }) => {
   if (loading) {
     return (
       <section className="py-8">
@@ -755,37 +755,62 @@ const PromoBanner = ({ banners, loading }) => {
     )
   }
 
-  if (!banners || banners.length === 0) {
+  // Filter banners by position if specified
+  let filteredBanners = banners;
+  if (position) {
+    filteredBanners = banners.filter(banner => banner.position === position);
+  }
+
+  if (filteredBanners.length === 0) {
+    // Show default banners if no banners for this position
+    const defaultBanners = [
+      {
+        id: 1,
+        title: "Exclusive Deals Up to 60% Off",
+        description: "Discover our premium collection with exclusive discounts on top brands and products.",
+        link: "/search?sale=premium",
+        label: "🔥 Premium Collection"
+      },
+      {
+        id: 2,
+        title: "New Arrivals",
+        description: "Check out our latest products just added to the collection.",
+        link: "/search?sort=newest",
+        label: "✨ Just In"
+      }
+    ];
+
     return (
       <section className="py-8">
         <div className="container mx-auto px-4">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-700 via-blue-800 to-blue-900 p-8 lg:p-12"
-          >
-            <div className="relative z-10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-              <div className="text-white">
-                <span className="inline-block px-4 py-1.5 rounded-full bg-white/20 backdrop-blur-sm text-sm font-medium mb-4">
-                  🔥 Premium Collection
-                </span>
-                <h3 className="text-3xl lg:text-4xl font-bold mb-2">
-                  Exclusive Deals Up to 60% Off
-                </h3>
-                <p className="text-white/80 max-w-md">
-                  Discover our premium collection with exclusive discounts on top brands and products.
-                </p>
-              </div>
-              <div className="flex gap-3">
-                <Button size="lg" variant="secondary" className="shadow-lg" asChild>
-                  <Link to="/search?sale=premium">
-                    Shop Now <ArrowRight className="h-4 w-4 ml-1" />
-                  </Link>
-                </Button>
-              </div>
-            </div>
-          </motion.div>
+          <div className="grid md:grid-cols-2 gap-4">
+            {defaultBanners.map((banner, index) => (
+              <motion.div
+                key={banner.id}
+                initial={{ opacity: 0, x: index === 0 ? -20 : 20 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                className={`relative overflow-hidden rounded-2xl ${index === 0 ? 'bg-gradient-to-br from-blue-700 to-blue-800' : 'bg-gradient-to-br from-blue-800 to-blue-900'} p-6 lg:p-8 text-white`}
+              >
+                <div className="relative z-10">
+                  <span className="inline-block px-3 py-1 rounded-full bg-white/20 text-xs font-medium mb-4">
+                    {banner.label}
+                  </span>
+                  <h3 className="text-2xl lg:text-3xl font-bold mb-2">
+                    {banner.title}
+                  </h3>
+                  <p className="text-white/80 mb-4">
+                    {banner.description}
+                  </p>
+                  <Button variant="secondary" size="sm" asChild>
+                    <Link to={banner.link}>
+                      Shop Now <ArrowRight className="h-4 w-4 ml-1" />
+                    </Link>
+                  </Button>
+                </div>
+              </motion.div>
+            ))}
+          </div>
         </div>
       </section>
     )
@@ -795,7 +820,7 @@ const PromoBanner = ({ banners, loading }) => {
     <section className="py-8">
       <div className="container mx-auto px-4">
         <div className="grid md:grid-cols-2 gap-4">
-          {banners.slice(0, 2).map((banner, index) => (
+          {filteredBanners.slice(0, 2).map((banner, index) => (
             <motion.div
               key={banner._id || index}
               initial={{ opacity: 0, x: index === 0 ? -20 : 20 }}
@@ -939,7 +964,7 @@ const ProductsDisplay = ({ title, icon: Icon, description, products, seeMoreLink
   )
 }
 
-// Main Home Component
+// Main Home Component - UPDATED WITH BANNER POSITIONS
 const BuyerHome = () => {
   const [featuredProducts, setFeaturedProducts] = useState([])
   const [newArrivals, setNewArrivals] = useState([])
@@ -947,6 +972,9 @@ const BuyerHome = () => {
   const [trendingProducts, setTrendingProducts] = useState([])
   const [categories, setCategories] = useState([])
   const [banners, setBanners] = useState([])
+  const [homeTopBanners, setHomeTopBanners] = useState([])
+  const [homeMiddleBanners, setHomeMiddleBanners] = useState([])
+  const [homeBottomBanners, setHomeBottomBanners] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
@@ -963,12 +991,35 @@ const BuyerHome = () => {
       
       // Fetch data sequentially with delays to avoid rate limiting
       const tasks = [
-        // 1. Fetch banners first (most important)
+        // 1. Fetch all banners
         async () => {
           console.log('Fetching banners...')
-          const response = await bannerService.getActiveAds({ position: 'HOME_TOP', limit: 3 })
-          setBanners(response.data || [])
-          return response
+          try {
+            const response = await bannerService.getActiveAds()
+            const allBanners = response.data || []
+            setBanners(allBanners)
+            
+            // Filter banners by position
+            setHomeTopBanners(allBanners.filter(b => b.position === 'HOME_TOP'))
+            setHomeMiddleBanners(allBanners.filter(b => b.position === 'HOME_MIDDLE'))
+            setHomeBottomBanners(allBanners.filter(b => b.position === 'HOME_BOTTOM'))
+            
+            console.log('Banners loaded:', {
+              total: allBanners.length,
+              homeTop: homeTopBanners.length,
+              homeMiddle: homeMiddleBanners.length,
+              homeBottom: homeBottomBanners.length
+            })
+            
+            return response
+          } catch (bannerError) {
+            console.error('Failed to fetch banners:', bannerError)
+            // Set empty banners and continue
+            setBanners([])
+            setHomeTopBanners([])
+            setHomeMiddleBanners([])
+            setHomeBottomBanners([])
+          }
         },
         
         // 2. Wait 500ms
@@ -1050,6 +1101,9 @@ const BuyerHome = () => {
       console.log('✅ Home data loaded successfully')
       console.log({
         banners: banners.length,
+        homeTopBanners: homeTopBanners.length,
+        homeMiddleBanners: homeMiddleBanners.length,
+        homeBottomBanners: homeBottomBanners.length,
         featured: featuredProducts.length,
         categories: categories.length,
         newArrivals: newArrivals.length,
@@ -1063,6 +1117,9 @@ const BuyerHome = () => {
       
       // Set minimal data for fallback
       setBanners([])
+      setHomeTopBanners([])
+      setHomeMiddleBanners([])
+      setHomeBottomBanners([])
       setFeaturedProducts([])
       setCategories([])
       setNewArrivals([])
@@ -1140,7 +1197,7 @@ const BuyerHome = () => {
 
   return (
     <div className="min-h-screen">
-      {/* Hero Banner */}
+      {/* Hero Banner - HOME_TOP position */}
       <section className="relative overflow-hidden">
         <div className="container mx-auto py-8 px-4">
           <div className="grid lg:grid-cols-3 gap-4">
@@ -1150,12 +1207,12 @@ const BuyerHome = () => {
               animate={{ opacity: 1, y: 0 }}
               className="lg:col-span-2 relative rounded-2xl overflow-hidden bg-gradient-to-br from-blue-100 to-blue-200 min-h-[320px] lg:min-h-[400px]"
             >
-              {banners.length > 0 ? (
+              {homeTopBanners.length > 0 ? (
                 <>
                   <div className="absolute inset-0">
                     <img
-                      src={banners[0].image}
-                      alt={banners[0].title}
+                      src={homeTopBanners[0].image}
+                      alt={homeTopBanners[0].title}
                       className="w-full h-full object-cover"
                       onError={(e) => {
                         e.target.onerror = null
@@ -1172,7 +1229,7 @@ const BuyerHome = () => {
                       className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 backdrop-blur-sm text-white text-sm font-medium w-fit mb-4"
                     >
                       <Sparkles className="h-4 w-4" />
-                      {banners[0].label || 'Limited Time Offer'}
+                      {homeTopBanners[0].label || 'Limited Time Offer'}
                     </motion.div>
                     
                     <motion.h2 
@@ -1181,7 +1238,7 @@ const BuyerHome = () => {
                       transition={{ delay: 0.3 }}
                       className="text-3xl lg:text-5xl font-bold text-white mb-4"
                     >
-                      {banners[0].title}
+                      {homeTopBanners[0].title}
                     </motion.h2>
                     
                     <motion.p 
@@ -1190,7 +1247,7 @@ const BuyerHome = () => {
                       transition={{ delay: 0.4 }}
                       className="text-white/80 text-lg mb-6 max-w-md"
                     >
-                      {banners[0].description}
+                      {homeTopBanners[0].description}
                     </motion.p>
                     
                     <motion.div
@@ -1200,7 +1257,7 @@ const BuyerHome = () => {
                       className="flex items-center gap-3"
                     >
                       <Button size="lg" className="gap-2 shadow-lg" asChild>
-                        <Link to={banners[0].link || '/search'}>
+                        <Link to={homeTopBanners[0].link || '/search'}>
                           Shop Now
                           <ArrowRight className="h-4 w-4" />
                         </Link>
@@ -1322,6 +1379,11 @@ const BuyerHome = () => {
       {/* Deals */}
       <DealsSection deals={deals} loading={loading && featuredProducts.length === 0} />
 
+      {/* Featured Products - HOME_MIDDLE position banners before */}
+      {homeMiddleBanners.length > 0 && (
+        <PromoBanner banners={homeMiddleBanners} loading={loading && banners.length === 0} position="HOME_MIDDLE" />
+      )}
+
       {/* Featured Products */}
       <FeaturedProducts products={featuredProducts} loading={loading && featuredProducts.length === 0} />
 
@@ -1335,8 +1397,10 @@ const BuyerHome = () => {
         loading={loading && bestSellers.length === 0}
       />
 
-      {/* Promo Banner */}
-      <PromoBanner banners={banners.slice(1)} loading={loading && banners.length === 0} />
+      {/* HOME_BOTTOM position banners */}
+      {homeBottomBanners.length > 0 && (
+        <PromoBanner banners={homeBottomBanners} loading={loading && banners.length === 0} position="HOME_BOTTOM" />
+      )}
 
       {/* Trending Products */}
       <ProductsDisplay
