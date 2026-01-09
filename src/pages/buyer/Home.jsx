@@ -7,15 +7,17 @@ import {
   Shirt, Home as HomeIcon, Dumbbell, Sparkles, Baby, BookOpen, Laptop, 
   Sofa, Watch, Gamepad2, Plane, HeartPulse, Music, Camera, 
   Wrench, PawPrint, Gem, Heart, ShoppingCart, Eye, 
-  ChevronLeft, ChevronRight as ChevronRightIcon
+  ChevronLeft, ChevronRight as ChevronRightIcon,
+  Loader2
 } from 'lucide-react'
 import productService from '../../services/product.service'
 import categoryService from '../../services/category.service'
 import bannerService from '../../services/banner.service'
+import { useApiCall } from '../../hooks/useCachedFetch'
 
 // Button Component
-const Button = ({ children, variant = 'default', size = 'md', className = '', asChild = false, ...props }) => {
-  const baseStyles = 'inline-flex items-center justify-center rounded-full font-medium transition-all duration-200 transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed'
+const Button = ({ children, variant = 'default', size = 'md', className = '', asChild = false, disabled = false, loading = false, ...props }) => {
+  const baseStyles = 'inline-flex items-center justify-center rounded-full font-medium transition-all duration-200 transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:transform-none'
   const variants = {
     default: 'bg-gradient-to-r from-blue-700 to-blue-800 text-white hover:from-blue-800 hover:to-blue-900 hover:shadow-md',
     secondary: 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 hover:border-gray-300',
@@ -33,10 +35,16 @@ const Button = ({ children, variant = 'default', size = 'md', className = '', as
   
   return (
     <Comp
-      className={`${baseStyles} ${variants[variant]} ${sizes[size]} ${className}`}
+      className={`${baseStyles} ${variants[variant]} ${sizes[size]} ${className} ${loading ? 'relative' : ''}`}
+      disabled={disabled || loading}
       {...props}
     >
-      {children}
+      {loading && (
+        <Loader2 className="h-4 w-4 animate-spin absolute left-4" />
+      )}
+      <span className={loading ? 'ml-2' : ''}>
+        {children}
+      </span>
     </Comp>
   )
 }
@@ -62,6 +70,7 @@ const Badge = ({ children, variant = 'default', className = '' }) => {
 const ProductCard = ({ product }) => {
   const [isHovered, setIsHovered] = useState(false)
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
+  const [addingToCart, setAddingToCart] = useState(false)
 
   const images = product.images || []
   const allImages = images.length > 0 ? images : ['https://images.unsplash.com/photo-1551028719-00167b16eac5?w=400']
@@ -76,6 +85,23 @@ const ProductCard = ({ product }) => {
     e.preventDefault()
     e.stopPropagation()
     setCurrentImageIndex((prev) => (prev - 1 + allImages.length) % allImages.length)
+  }
+
+  const handleAddToCart = async (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    
+    setAddingToCart(true)
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 500))
+      // Add to cart logic here
+      console.log('Added to cart:', product._id)
+    } catch (error) {
+      console.error('Failed to add to cart:', error)
+    } finally {
+      setAddingToCart(false)
+    }
   }
 
   return (
@@ -229,12 +255,9 @@ const ProductCard = ({ product }) => {
             <Button 
               className="w-full mt-3 gap-2" 
               size="sm"
-              onClick={(e) => {
-                e.preventDefault()
-                e.stopPropagation()
-                // Add to cart logic here
-              }}
+              onClick={handleAddToCart}
               disabled={product.stock === 0}
+              loading={addingToCart}
             >
               <ShoppingCart className="h-4 w-4" />
               {product.stock > 0 ? 'Add to Cart' : 'Out of Stock'}
@@ -328,34 +351,47 @@ const getIconForCategory = (categoryName, categorySlug) => {
 }
 
 // Category Section Component
-const CategorySection = ({ categories }) => {
+const CategorySection = ({ categories, loading }) => {
   const [categoryImages, setCategoryImages] = useState({})
   const [loadingImages, setLoadingImages] = useState(true)
 
   useEffect(() => {
     const fetchCategoryImages = async () => {
+      if (!categories || categories.length === 0) {
+        setLoadingImages(false)
+        return
+      }
+
       try {
         setLoadingImages(true)
-        const imagePromises = categories.map(async (category) => {
+        
+        // Fetch images sequentially to avoid rate limits
+        const categoryData = []
+        
+        for (let i = 0; i < Math.min(categories.length, 21); i++) {
+          const category = categories[i]
           try {
-            // Fetch full category data including image
+            // Add delay between requests
+            if (i > 0) {
+              await new Promise(resolve => setTimeout(resolve, 200))
+            }
+            
             const response = await categoryService.getCategoryById(category._id)
-            return {
+            categoryData.push({
               id: category._id,
               image: response.data?.image || null,
-              gradient: getGradientForIndex(categories.indexOf(category))
-            }
+              gradient: getGradientForIndex(i)
+            })
           } catch (error) {
             console.error(`Failed to fetch image for category ${category._id}:`, error)
-            return {
+            categoryData.push({
               id: category._id,
               image: null,
-              gradient: getGradientForIndex(categories.indexOf(category))
-            }
+              gradient: getGradientForIndex(i)
+            })
           }
-        })
+        }
 
-        const categoryData = await Promise.all(imagePromises)
         const imagesMap = {}
         categoryData.forEach(data => {
           imagesMap[data.id] = {
@@ -371,10 +407,36 @@ const CategorySection = ({ categories }) => {
       }
     }
 
-    if (categories && categories.length > 0) {
-      fetchCategoryImages()
-    }
+    fetchCategoryImages()
   }, [categories])
+
+  if (loading) {
+    return (
+      <section className="py-12">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h2 className="text-2xl lg:text-3xl font-bold text-gray-900">Browse by Category</h2>
+              <p className="text-gray-600 mt-1">Explore our wide range of products</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-3">
+            {[...Array(14)].map((_, index) => (
+              <div key={index} className="animate-pulse">
+                <div className="aspect-square rounded-2xl bg-gray-200 mb-3"></div>
+                <div className="h-4 bg-gray-200 rounded mb-1"></div>
+                <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  if (!categories || categories.length === 0) {
+    return null
+  }
 
   return (
     <section className="py-12">
@@ -393,7 +455,7 @@ const CategorySection = ({ categories }) => {
           <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-3">
             {[...Array(14)].map((_, index) => (
               <div key={index} className="animate-pulse">
-                <div className="aspect-square rounded-2xl bg-gradient-to-br from-gray-200 to-gray-300 mb-3"></div>
+                <div className="aspect-square rounded-2xl bg-gray-200 mb-3"></div>
                 <div className="h-4 bg-gray-200 rounded mb-1"></div>
                 <div className="h-3 bg-gray-200 rounded w-1/2"></div>
               </div>
@@ -454,7 +516,7 @@ const CategorySection = ({ categories }) => {
 }
 
 // Deals Section Component
-const DealsSection = ({ deals }) => {
+const DealsSection = ({ deals, loading }) => {
   const [timeLeft, setTimeLeft] = useState({ hours: 12, minutes: 0, seconds: 0 })
 
   useEffect(() => {
@@ -490,6 +552,40 @@ const DealsSection = ({ deals }) => {
     </div>
   )
 
+  if (loading) {
+    return (
+      <section className="py-12">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-blue-700 flex items-center justify-center">
+                <Clock className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <h2 className="text-2xl lg:text-3xl font-bold text-gray-900">Deals of the Day</h2>
+                <p className="text-gray-600">Hurry up! Limited time offers</p>
+              </div>
+            </div>
+          </div>
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[...Array(4)].map((_, index) => (
+              <div key={index} className="animate-pulse">
+                <div className="aspect-square rounded-2xl bg-gray-200 mb-3"></div>
+                <div className="h-6 bg-gray-200 rounded mb-2"></div>
+                <div className="h-4 bg-gray-200 rounded mb-2"></div>
+                <div className="h-10 bg-gray-200 rounded"></div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  if (!deals || deals.length === 0) {
+    return null
+  }
+
   return (
     <section className="py-12">
       <div className="container mx-auto px-4">
@@ -513,7 +609,7 @@ const DealsSection = ({ deals }) => {
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
           {deals.slice(0, 4).map((deal, index) => (
             <motion.div
-              key={deal._id}
+              key={deal._id || index}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
@@ -571,7 +667,40 @@ const DealsSection = ({ deals }) => {
 }
 
 // Featured Products Component
-const FeaturedProducts = ({ products }) => {
+const FeaturedProducts = ({ products, loading }) => {
+  if (loading) {
+    return (
+      <section className="py-12 bg-gradient-to-br from-blue-50 to-blue-100/50">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-r from-blue-700 to-blue-800 flex items-center justify-center">
+                <Flame className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <h2 className="text-2xl lg:text-3xl font-bold text-gray-900">Featured Products</h2>
+                <p className="text-gray-600">Handpicked items just for you</p>
+              </div>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {[...Array(8)].map((_, index) => (
+              <div key={index} className="animate-pulse">
+                <div className="aspect-square rounded-2xl bg-gray-200 mb-3"></div>
+                <div className="h-4 bg-gray-200 rounded mb-2"></div>
+                <div className="h-6 bg-gray-200 rounded w-1/2"></div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  if (!products || products.length === 0) {
+    return null
+  }
+
   return (
     <section className="py-12 bg-gradient-to-br from-blue-50 to-blue-100/50">
       <div className="container mx-auto px-4">
@@ -595,7 +724,7 @@ const FeaturedProducts = ({ products }) => {
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 lg:gap-6">
           {products.slice(0, 8).map((product, index) => (
             <motion.div
-              key={product._id}
+              key={product._id || index}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
@@ -611,7 +740,21 @@ const FeaturedProducts = ({ products }) => {
 }
 
 // Promo Banner Component
-const PromoBanner = ({ banners }) => {
+const PromoBanner = ({ banners, loading }) => {
+  if (loading) {
+    return (
+      <section className="py-8">
+        <div className="container mx-auto px-4">
+          <div className="grid md:grid-cols-2 gap-4">
+            {[...Array(2)].map((_, index) => (
+              <div key={index} className="h-48 rounded-2xl bg-gray-200 animate-pulse"></div>
+            ))}
+          </div>
+        </div>
+      </section>
+    )
+  }
+
   if (!banners || banners.length === 0) {
     return (
       <section className="py-8">
@@ -654,7 +797,7 @@ const PromoBanner = ({ banners }) => {
         <div className="grid md:grid-cols-2 gap-4">
           {banners.slice(0, 2).map((banner, index) => (
             <motion.div
-              key={banner._id}
+              key={banner._id || index}
               initial={{ opacity: 0, x: index === 0 ? -20 : 20 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
@@ -739,7 +882,7 @@ const ProductsDisplay = ({ title, icon: Icon, description, products, seeMoreLink
             </div>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {[...Array(4)].map((_, index) => (
+            {[...Array(8)].map((_, index) => (
               <div key={index} className="animate-pulse">
                 <div className="aspect-square rounded-2xl bg-gray-200 mb-3"></div>
                 <div className="h-4 bg-gray-200 rounded mb-2"></div>
@@ -805,6 +948,7 @@ const BuyerHome = () => {
   const [categories, setCategories] = useState([])
   const [banners, setBanners] = useState([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
   useEffect(() => {
     fetchHomeData()
@@ -813,78 +957,120 @@ const BuyerHome = () => {
   const fetchHomeData = async () => {
     try {
       setLoading(true)
+      setError(null)
       
-      console.log('Fetching home data...')
+      console.log('🔄 Fetching home data with sequential requests...')
       
-      // Fetch all data in parallel
-      const [
-        featuredRes,
-        newArrivalsRes,
-        bestSellersRes,
-        trendingRes,
-        categoriesRes,
-        bannersRes
-      ] = await Promise.all([
-        productService.getAllProducts({ 
-          published: true, 
-          approved: true,
-          limit: 12,
-          sortBy: 'featured'
-        }),
-        productService.getAllProducts({ 
-          published: true, 
-          approved: true,
-          limit: 8,
-          sortBy: 'newest'
-        }),
-        productService.getAllProducts({ 
-          published: true, 
-          approved: true,
-          limit: 8,
-          sortBy: 'sales'
-        }),
-        productService.getAllProducts({ 
-          published: true, 
-          approved: true,
-          limit: 8,
-          sortBy: 'trending'
-        }),
-        categoryService.getFeaturedCategories(),
-        bannerService.getActiveAds({ position: 'HOME_TOP' })
-      ])
-
-      setFeaturedProducts(featuredRes.data.products || [])
-      setNewArrivals(newArrivalsRes.data.products || [])
-      setBestSellers(bestSellersRes.data.products || [])
-      setTrendingProducts(trendingRes.data.products || [])
-      setCategories(categoriesRes.data || [])
-      setBanners(bannersRes.data || [])
+      // Fetch data sequentially with delays to avoid rate limiting
+      const tasks = [
+        // 1. Fetch banners first (most important)
+        async () => {
+          console.log('Fetching banners...')
+          const response = await bannerService.getActiveAds({ position: 'HOME_TOP', limit: 3 })
+          setBanners(response.data || [])
+          return response
+        },
+        
+        // 2. Wait 500ms
+        async () => {
+          await new Promise(resolve => setTimeout(resolve, 500))
+        },
+        
+        // 3. Fetch featured products
+        async () => {
+          console.log('Fetching featured products...')
+          const response = await productService.getFeaturedProducts(12)
+          setFeaturedProducts(response.data?.products || [])
+          return response
+        },
+        
+        // 4. Wait 800ms
+        async () => {
+          await new Promise(resolve => setTimeout(resolve, 800))
+        },
+        
+        // 5. Fetch categories
+        async () => {
+          console.log('Fetching categories...')
+          const response = await categoryService.getFeaturedCategories()
+          setCategories(response.data || [])
+          return response
+        },
+        
+        // 6. Wait 800ms
+        async () => {
+          await new Promise(resolve => setTimeout(resolve, 800))
+        },
+        
+        // 7. Fetch new arrivals
+        async () => {
+          console.log('Fetching new arrivals...')
+          const response = await productService.getNewArrivals(8)
+          setNewArrivals(response.data?.products || [])
+          return response
+        },
+        
+        // 8. Wait 600ms
+        async () => {
+          await new Promise(resolve => setTimeout(resolve, 600))
+        },
+        
+        // 9. Fetch best sellers
+        async () => {
+          console.log('Fetching best sellers...')
+          const response = await productService.getBestSellers(8)
+          setBestSellers(response.data?.products || [])
+          return response
+        },
+        
+        // 10. Wait 600ms
+        async () => {
+          await new Promise(resolve => setTimeout(resolve, 600))
+        },
+        
+        // 11. Fetch trending products
+        async () => {
+          console.log('Fetching trending products...')
+          const response = await productService.getTrendingProducts(8)
+          setTrendingProducts(response.data?.products || [])
+          return response
+        }
+      ]
+      
+      // Execute tasks sequentially
+      for (let i = 0; i < tasks.length; i++) {
+        try {
+          await tasks[i]()
+        } catch (taskError) {
+          console.error(`Task ${i + 1} failed:`, taskError.message)
+          // Continue with other tasks even if one fails
+        }
+      }
       
       console.log('✅ Home data loaded successfully')
       console.log({
-        featured: featuredRes.data.products?.length,
-        newArrivals: newArrivalsRes.data.products?.length,
-        bestSellers: bestSellersRes.data.products?.length,
-        trending: trendingRes.data.products?.length,
-        categories: categoriesRes.data?.length,
-        banners: bannersRes.data?.length
+        banners: banners.length,
+        featured: featuredProducts.length,
+        categories: categories.length,
+        newArrivals: newArrivals.length,
+        bestSellers: bestSellers.length,
+        trending: trendingProducts.length
       })
+      
     } catch (error) {
       console.error('❌ Failed to fetch home data:', error)
+      setError('Failed to load data. Please try again.')
+      
+      // Set minimal data for fallback
+      setBanners([])
+      setFeaturedProducts([])
+      setCategories([])
+      setNewArrivals([])
+      setBestSellers([])
+      setTrendingProducts([])
     } finally {
       setLoading(false)
     }
-  }
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-blue-700 border-t-transparent rounded-full animate-spin mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading amazing products...</p>
-        </div>
-      </div>
-    )
   }
 
   // Create deals data from featured products with discounts
@@ -892,6 +1078,65 @@ const BuyerHome = () => {
     ...product,
     comparePrice: product.comparePrice || Math.round(product.price * (1 + Math.random() * 0.5))
   }))
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center max-w-md">
+          <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
+            <span className="text-2xl">⚠️</span>
+          </div>
+          <h3 className="text-xl font-bold text-gray-900 mb-2">Oops! Something went wrong</h3>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <Button onClick={fetchHomeData} loading={loading}>
+            Try Again
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen">
+        {/* Hero Banner Loading */}
+        <section className="relative overflow-hidden">
+          <div className="container mx-auto py-8 px-4">
+            <div className="grid lg:grid-cols-3 gap-4">
+              <div className="lg:col-span-2 h-[320px] lg:h-[400px] rounded-2xl bg-gray-200 animate-pulse"></div>
+              <div className="flex flex-col gap-4">
+                <div className="h-[154px] rounded-2xl bg-gray-200 animate-pulse"></div>
+                <div className="h-[154px] rounded-2xl bg-gray-200 animate-pulse"></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Features Loading */}
+        <section className="py-8">
+          <div className="container mx-auto px-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              {[...Array(4)].map((_, idx) => (
+                <div key={idx} className="h-20 rounded-2xl bg-gray-200 animate-pulse"></div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Categories Loading */}
+        <section className="py-12">
+          <div className="container mx-auto px-4">
+            <div className="h-8 bg-gray-200 rounded w-64 mb-8 animate-pulse"></div>
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-3">
+              {[...Array(14)].map((_, idx) => (
+                <div key={idx} className="h-32 rounded-2xl bg-gray-200 animate-pulse"></div>
+              ))}
+            </div>
+          </div>
+        </section>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen">
@@ -1062,56 +1307,46 @@ const BuyerHome = () => {
       <Features />
 
       {/* Categories */}
-      <CategorySection categories={categories} />
+      <CategorySection categories={categories} loading={loading && categories.length === 0} />
 
       {/* New Arrivals */}
-      {newArrivals.length > 0 && (
-        <ProductsDisplay
-          title="New Arrivals"
-          icon={Zap}
-          description="Check out our latest products"
-          products={newArrivals}
-          seeMoreLink="/search?sort=newest"
-          loading={loading}
-        />
-      )}
+      <ProductsDisplay
+        title="New Arrivals"
+        icon={Zap}
+        description="Check out our latest products"
+        products={newArrivals}
+        seeMoreLink="/search?sort=newest"
+        loading={loading && newArrivals.length === 0}
+      />
 
       {/* Deals */}
-      {deals.length > 0 && (
-        <DealsSection deals={deals} />
-      )}
+      <DealsSection deals={deals} loading={loading && featuredProducts.length === 0} />
 
       {/* Featured Products */}
-      {featuredProducts.length > 0 && (
-        <FeaturedProducts products={featuredProducts} />
-      )}
+      <FeaturedProducts products={featuredProducts} loading={loading && featuredProducts.length === 0} />
 
       {/* Best Sellers */}
-      {bestSellers.length > 0 && (
-        <ProductsDisplay
-          title="Best Sellers"
-          icon={TrendingUp}
-          description="Most popular products this week"
-          products={bestSellers}
-          seeMoreLink="/search?sort=popular"
-          loading={loading}
-        />
-      )}
+      <ProductsDisplay
+        title="Best Sellers"
+        icon={TrendingUp}
+        description="Most popular products this week"
+        products={bestSellers}
+        seeMoreLink="/search?sort=popular"
+        loading={loading && bestSellers.length === 0}
+      />
 
       {/* Promo Banner */}
-      <PromoBanner banners={banners.slice(1)} />
+      <PromoBanner banners={banners.slice(1)} loading={loading && banners.length === 0} />
 
       {/* Trending Products */}
-      {trendingProducts.length > 0 && (
-        <ProductsDisplay
-          title="Trending Now"
-          icon={Flame}
-          description="What everyone is buying"
-          products={trendingProducts}
-          seeMoreLink="/search?sort=trending"
-          loading={loading}
-        />
-      )}
+      <ProductsDisplay
+        title="Trending Now"
+        icon={Flame}
+        description="What everyone is buying"
+        products={trendingProducts}
+        seeMoreLink="/search?sort=trending"
+        loading={loading && trendingProducts.length === 0}
+      />
 
       {/* CTA Section */}
       <section className="py-8">

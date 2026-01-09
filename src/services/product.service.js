@@ -1,221 +1,213 @@
-import api from './api'
+import api from './api';
+import { retryWithBackoff, executeSequentially } from '../utils/retryWithBackoff';
 
-const productService = {
-  getAllProducts: (params = {}) => {
-    console.log('=== PRODUCT SERVICE: getAllProducts called ===');
-    console.log('Params received:', params);
-    console.log('Type of params:', typeof params);
-    
-    // Handle different types of params
-    let queryParams = {};
-    
-    if (typeof params === 'string') {
-      console.log('Params is a string, parsing...');
-      // If it's a string like "?admin=true&limit=100", remove the ? and parse
-      const cleanString = params.startsWith('?') ? params.substring(1) : params;
-      const urlParams = new URLSearchParams(cleanString);
-      queryParams = Object.fromEntries(urlParams.entries());
-    } else if (typeof params === 'object' && params !== null) {
-      console.log('Params is an object, using directly');
-      queryParams = params;
-    } else {
-      console.log('Params is undefined or null, using empty object');
-      queryParams = {};
+class ProductService {
+  constructor() {
+    this.cache = new Map();
+    this.cacheDuration = 5 * 60 * 1000; // 5 minutes
+  }
+
+  // Get from cache
+  getFromCache(key) {
+    const cached = this.cache.get(key);
+    if (cached && Date.now() - cached.timestamp < this.cacheDuration) {
+      return cached.data;
     }
+    return null;
+  }
+
+  // Set cache
+  setCache(key, data) {
+    this.cache.set(key, {
+      data,
+      timestamp: Date.now()
+    });
+  }
+
+  // Clear cache
+  clearCache() {
+    this.cache.clear();
+  }
+
+  // Get all products with retry logic
+  async getAllProducts(params = {}, useCache = true) {
+    const cacheKey = `products:${JSON.stringify(params)}`;
     
-    console.log('Final query params:', queryParams);
-    return api.get('/products', { params: queryParams });
-  },
-  
-  getProductById: (id) => {
-    console.log('=== PRODUCT SERVICE: getProductById called ===');
-    console.log('Product ID:', id);
-    return api.get(`/products/${id}`);
-  },
-  
-  createProduct: (productData) => {
-    console.log('=== PRODUCT SERVICE: createProduct called ===');
-    console.log('Type of productData:', typeof productData);
-    console.log('Is FormData?', productData instanceof FormData);
-    
-    let formData;
-    
-    // Check if productData is already FormData
-    if (productData instanceof FormData) {
-      console.log('Already FormData, using directly');
-      formData = productData;
-    } else {
-      // If it's an object, convert to FormData
-      console.log('Converting object to FormData');
-      formData = new FormData();
-      
-      Object.keys(productData).forEach(key => {
-        const value = productData[key];
-        console.log(`Processing key: ${key}, value:`, value);
-        
-        if (key === 'images' && Array.isArray(value)) {
-          // Handle images array
-          value.forEach((file, index) => {
-            if (file instanceof File) {
-              formData.append('images', file);
-              console.log(`Appended image ${index}: ${file.name}`);
-            } else {
-              console.log(`Image ${index} is not a File object:`, file);
-            }
-          });
-        } else if (key === 'attributes' || key === 'specifications' || key === 'tags' || key === 'shipping' || key === 'variants') {
-          // Stringify complex objects
-          if (value && typeof value === 'object') {
-            formData.append(key, JSON.stringify(value));
-            console.log(`Appended ${key} as JSON:`, value);
-          }
-        } else {
-          // Append simple values
-          if (value !== undefined && value !== null) {
-            formData.append(key, value);
-            console.log(`Appended ${key}: ${value}`);
-          }
-        }
-      });
-    }
-    
-    // Debug: Log all FormData entries
-    console.log('=== FormData Contents ===');
-    for (let pair of formData.entries()) {
-      if (pair[1] instanceof File) {
-        console.log(`${pair[0]}: File - ${pair[1].name} (${pair[1].size} bytes, ${pair[1].type})`);
-      } else {
-        console.log(`${pair[0]}: ${pair[1]}`);
+    if (useCache) {
+      const cached = this.getFromCache(cacheKey);
+      if (cached) {
+        console.log('Cache hit for products');
+        return cached;
       }
     }
-    
-    // IMPORTANT: Do NOT set Content-Type header manually
-    // Axios will automatically set it for FormData
-    return api.post('/products', formData);
-  },
-  
-  updateProduct: (id, productData) => {
-    console.log('=== PRODUCT SERVICE: updateProduct called ===');
-    console.log('Product ID:', id);
-    console.log('Product data type:', typeof productData);
-    
-    let formData;
-    
-    if (productData instanceof FormData) {
-      formData = productData;
-    } else {
-      formData = new FormData();
-      
-      Object.keys(productData).forEach(key => {
-        const value = productData[key];
-        
-        if (key === 'images' && Array.isArray(value)) {
-          value.forEach(file => {
-            if (file instanceof File) {
-              formData.append('images', file);
-            }
-          });
-        } else if (key === 'attributes' || key === 'specifications' || key === 'tags' || key === 'shipping' || key === 'variants' || key === 'seo' || key === 'removeImages') {
-          if (value && typeof value === 'object') {
-            formData.append(key, JSON.stringify(value));
-          }
-        } else {
-          if (value !== undefined && value !== null) {
-            formData.append(key, value);
-          }
-        }
-      });
-    }
-    
-    console.log('=== Update FormData Contents ===');
-    for (let pair of formData.entries()) {
-      if (pair[1] instanceof File) {
-        console.log(`${pair[0]}: File - ${pair[1].name}`);
-      } else {
-        console.log(`${pair[0]}: ${pair[1]}`);
+
+    try {
+      const response = await retryWithBackoff(
+        () => api.get('/products', { params }),
+        2, // max retries
+        1000 // base delay
+      );
+
+      if (useCache) {
+        this.setCache(cacheKey, response);
       }
+
+      return response;
+    } catch (error) {
+      console.error('Failed to fetch products:', error.message);
+      
+      // Return cached data even if stale
+      const cached = this.getFromCache(cacheKey);
+      if (cached) {
+        console.log('Returning stale cached products');
+        return cached;
+      }
+      
+      throw error;
     }
+  }
+
+  // Get single product
+  async getProductById(id) {
+    const cacheKey = `product:${id}`;
+    const cached = this.getFromCache(cacheKey);
     
-    return api.put(`/products/${id}`, formData);
-  },
-  
-  deleteProduct: (id) => {
-    console.log('=== PRODUCT SERVICE: deleteProduct called ===');
-    console.log('Product ID:', id);
-    return api.delete(`/products/${id}`);
-  },
-  
-  getVendorProducts: (params = {}) => {
-    console.log('=== PRODUCT SERVICE: getVendorProducts called ===');
-    console.log('Params:', params);
-    
-    let queryParams = {};
-    if (typeof params === 'string') {
-      const cleanString = params.startsWith('?') ? params.substring(1) : params;
-      const urlParams = new URLSearchParams(cleanString);
-      queryParams = Object.fromEntries(urlParams.entries());
-    } else if (typeof params === 'object' && params !== null) {
-      queryParams = params;
+    if (cached) {
+      return cached;
     }
-    
-    return api.get('/products/vendor/my', { params: queryParams });
-  },
-  
-  searchProducts: (query) => {
-    console.log('=== PRODUCT SERVICE: searchProducts called ===');
-    console.log('Search query:', query);
-    return api.get(`/products/search?q=${encodeURIComponent(query)}`);
-  },
-  
-  updateStock: (id, stockData) => {
-    console.log('=== PRODUCT SERVICE: updateStock called ===');
-    console.log('Product ID:', id);
-    console.log('Stock data:', stockData);
-    
-    return api.put(`/products/${id}/stock`, stockData);
-  },
-  
-  bulkUpdateProducts: (data) => {
-    console.log('=== PRODUCT SERVICE: bulkUpdateProducts called ===');
-    console.log('Bulk update data:', data);
-    
-    return api.put('/products/bulk/update', data);
-  },
-  
-  // Test function for debugging
-  testCreateProduct: () => {
-    console.log('=== TEST: Creating product with hardcoded data ===');
-    
-    const testFormData = new FormData();
-    testFormData.append('title', 'Test Product from Service');
-    testFormData.append('description', 'This is a test product');
-    testFormData.append('price', '99.99');
-    testFormData.append('stock', '10');
-    testFormData.append('category', '695cd1c13876fe34c7a01367'); // cars category
-    
-    // Log what's in test FormData
-    console.log('=== Test FormData Contents ===');
-    for (let pair of testFormData.entries()) {
-      console.log(`${pair[0]}: ${pair[1]}`);
+
+    try {
+      const response = await retryWithBackoff(
+        () => api.get(`/products/${id}`),
+        2,
+        1000
+      );
+
+      this.setCache(cacheKey, response);
+      return response;
+    } catch (error) {
+      console.error(`Failed to fetch product ${id}:`, error.message);
+      throw error;
     }
+  }
+
+  // Get featured products
+  async getFeaturedProducts(limit = 12) {
+    return this.getAllProducts({
+      featured: true,
+      published: true,
+      approved: true,
+      limit,
+      sortBy: 'featured'
+    }, true);
+  }
+
+  // Get new arrivals
+  async getNewArrivals(limit = 8) {
+    return this.getAllProducts({
+      published: true,
+      approved: true,
+      limit,
+      sortBy: 'newest'
+    }, true);
+  }
+
+  // Get best sellers
+  async getBestSellers(limit = 8) {
+    return this.getAllProducts({
+      published: true,
+      approved: true,
+      limit,
+      sortBy: 'sales'
+    }, true);
+  }
+
+  // Get trending products
+  async getTrendingProducts(limit = 8) {
+    return this.getAllProducts({
+      published: true,
+      approved: true,
+      limit,
+      sortBy: 'trending'
+    }, true);
+  }
+
+  // Sequential fetching for homepage (to avoid rate limits)
+  async getHomepageData() {
+    const tasks = [
+      () => this.getFeaturedProducts(12),
+      () => this.getNewArrivals(8),
+      () => this.getBestSellers(8),
+      () => this.getTrendingProducts(8)
+    ];
+
+    try {
+      const [featured, newArrivals, bestSellers, trending] = await executeSequentially(tasks, 800);
+      
+      return {
+        featured: featured.data?.products || [],
+        newArrivals: newArrivals.data?.products || [],
+        bestSellers: bestSellers.data?.products || [],
+        trending: trending.data?.products || []
+      };
+    } catch (error) {
+      console.error('Failed to fetch homepage data:', error);
+      return {
+        featured: [],
+        newArrivals: [],
+        bestSellers: [],
+        trending: []
+      };
+    }
+  }
+
+  // Search products
+  async searchProducts(query, filters = {}) {
+    const params = {
+      search: query,
+      ...filters,
+      limit: filters.limit || 20,
+      page: filters.page || 1
+    };
+
+    const cacheKey = `search:${JSON.stringify(params)}`;
+    const cached = this.getFromCache(cacheKey);
     
-    return api.post('/products', testFormData);
-  },
-  
-  // Helper function to convert query string to object
-  parseQueryString: (queryString) => {
-    if (!queryString) return {};
-    const cleanString = queryString.startsWith('?') ? queryString.substring(1) : queryString;
-    const urlParams = new URLSearchParams(cleanString);
-    return Object.fromEntries(urlParams.entries());
-  },
-  
-  // Helper function to convert object to query string
-  toQueryString: (params = {}) => {
-    if (!params || Object.keys(params).length === 0) return '';
-    const urlParams = new URLSearchParams(params);
-    return `?${urlParams.toString()}`;
+    if (cached) {
+      return cached;
+    }
+
+    try {
+      const response = await retryWithBackoff(
+        () => api.get('/products/search', { params }),
+        2,
+        1000
+      );
+
+      this.setCache(cacheKey, response);
+      return response;
+    } catch (error) {
+      console.error('Search failed:', error.message);
+      throw error;
+    }
+  }
+
+  // Get related products
+  async getRelatedProducts(productId, limit = 4) {
+    try {
+      const response = await retryWithBackoff(
+        () => api.get(`/products/${productId}/related`, {
+          params: { limit }
+        }),
+        1,
+        1000
+      );
+      return response;
+    } catch (error) {
+      console.error(`Failed to get related products for ${productId}:`, error);
+      return { data: [] };
+    }
   }
 }
 
-export default productService
+export default new ProductService();
