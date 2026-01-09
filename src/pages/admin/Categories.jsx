@@ -24,6 +24,7 @@ const AdminCategories = () => {
   const [formErrors, setFormErrors] = useState({})
   const [submitting, setSubmitting] = useState(false)
   const [expandedCategories, setExpandedCategories] = useState({})
+  const [uploadProgress, setUploadProgress] = useState(0)
 
   useEffect(() => {
     fetchCategories()
@@ -57,74 +58,124 @@ const AdminCategories = () => {
     return Object.keys(errors).length === 0
   }
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    
-    if (!validateForm()) {
-      return
-    }
-    
-    setSubmitting(true)
-    
-    try {
-      const formDataToSend = new FormData()
-      
-      // Append form data
-      formDataToSend.append('name', formData.name.trim())
-      formDataToSend.append('description', formData.description || '')
-      formDataToSend.append('commissionRate', formData.commissionRate.toString())
-      formDataToSend.append('active', formData.active.toString())
-      
-      // Append parent if selected (empty string for no parent)
-      if (formData.parent && formData.parent !== '') {
-        formDataToSend.append('parent', formData.parent)
-      }
-      
-      // Append image if selected
-      if (selectedFile) {
-        formDataToSend.append('image', selectedFile)
-      }
-      
-      console.log('FormData being sent:', {
-        name: formData.name,
-        commissionRate: formData.commissionRate,
-        parent: formData.parent,
-        hasFile: !!selectedFile
-      })
-      
-      let response
-      
-      if (editingId) {
-        // Update existing category
-        response = await categoryService.updateCategory(editingId, formDataToSend)
-        alert('Category updated successfully!')
-      } else {
-        // Create new category
-        response = await categoryService.createCategory(formDataToSend)
-        alert('Category created successfully!')
-      }
-      
-      // Reset form and refresh
-      resetForm()
-      fetchCategories()
-      
-    } catch (error) {
-      console.error('Failed to save category:', error)
-      
-      const errorMessage = error.response?.data?.message || error.message
-      
-      if (error.response?.data?.existingCategory) {
-        alert(`Category already exists: "${error.response.data.existingCategory.name}"`)
-      } else {
-        alert('Failed to save category: ' + errorMessage)
-      }
-      
-    } finally {
-      setSubmitting(false)
-    }
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  
+  if (!validateForm()) {
+    return;
   }
+  
+  setSubmitting(true);
+  setUploadProgress(0);
+  
+  try {
+    console.log('=== STARTING CATEGORY SAVE ===');
+    console.log('Form data state:', formData);
+    console.log('Selected file:', selectedFile);
+    console.log('Editing ID:', editingId);
+    
+    // Create FormData object
+    const formDataToSend = new FormData();
+    
+    // Append all form fields as strings
+    formDataToSend.append('name', formData.name.trim());
+    formDataToSend.append('description', formData.description || '');
+    formDataToSend.append('commissionRate', formData.commissionRate.toString());
+    formDataToSend.append('active', formData.active.toString());
+    formDataToSend.append('parent', formData.parent || '');
+    
+    // Append image if selected
+    if (selectedFile && selectedFile instanceof File) {
+      console.log('Appending image:', selectedFile.name, 'size:', selectedFile.size);
+      formDataToSend.append('image', selectedFile);
+    } else {
+      console.log('No image to append');
+    }
+    
+    // Debug: Log FormData contents
+    console.log('FormData entries being sent:');
+    for (let pair of formDataToSend.entries()) {
+      const [key, value] = pair;
+      if (value instanceof File) {
+        console.log(`${key}: [File] ${value.name} (${value.size} bytes)`);
+      } else {
+        console.log(`${key}: "${value}"`);
+      }
+    }
+    
+    setUploadProgress(50);
+    
+    let response;
+    
+    if (editingId) {
+      console.log('Updating category with ID:', editingId);
+      response = await categoryService.updateCategory(editingId, formDataToSend);
+      alert('Category updated successfully!');
+    } else {
+      console.log('Creating new category');
+      response = await categoryService.createCategory(formDataToSend);
+      alert('Category created successfully!');
+    }
+    
+    setUploadProgress(100);
+    console.log('Save successful! Response:', response.data);
+    
+    // Reset form and refresh
+    resetForm();
+    fetchCategories();
+    
+  } catch (error) {
+    console.error('=== SAVE CATEGORY ERROR ===');
+    console.error('Full error:', error);
+    console.error('Error response:', error.response?.data);
+    console.error('Error status:', error.response?.status);
+    console.error('Error message:', error.message);
+    
+    // Try to get a better error message
+    let errorMessage = 'Failed to save category';
+    
+    if (error.response?.data?.message) {
+      errorMessage = error.response.data.message;
+      
+      // Add more details if available
+      if (error.response.data.error) {
+        errorMessage += `: ${error.response.data.error}`;
+      }
+      
+      if (error.response.data.details) {
+        console.error('Error details:', error.response.data.details);
+      }
+    } else if (error.message) {
+      errorMessage = error.message;
+    }
+    
+    // Check for specific errors
+    if (error.response?.data?.existingCategory) {
+      const existing = error.response.data.existingCategory;
+      errorMessage = `Category "${existing.name}" already exists`;
+    } else if (errorMessage.toLowerCase().includes('already exists') || errorMessage.toLowerCase().includes('duplicate')) {
+      // Try to extract the category name
+      const match = errorMessage.match(/category ["']?([^"']+)["']?/i);
+      if (match) {
+        errorMessage = `Category "${match[1]}" already exists`;
+      }
+    }
+    
+    alert(errorMessage);
+    
+    // If it's a validation error, update form errors
+    if (error.response?.data?.errors) {
+      setFormErrors(error.response.data.errors);
+    }
+    
+  } finally {
+    setSubmitting(false);
+    setUploadProgress(0);
+  }
+};
 
   const handleEdit = (category) => {
+    console.log('Editing category:', category)
     setEditingId(category._id)
     setFormData({
       name: category.name || '',
@@ -182,6 +233,7 @@ const AdminCategories = () => {
     setShowForm(false)
     setFormErrors({})
     setSubmitting(false)
+    setUploadProgress(0)
   }
 
   const getRootCategories = () => {
@@ -666,13 +718,36 @@ const AdminCategories = () => {
                           <ImageIcon className="h-6 w-6 text-blue-500" />
                         </div>
                         <p className="text-gray-600 font-medium mb-1">
-                          {selectedFile ? selectedFile.name : 'Click to upload image'}
+                          {selectedFile ? `${selectedFile.name} (${(selectedFile.size / 1024).toFixed(1)} KB)` : 'Click to upload image'}
                         </p>
-                        <p className="text-sm text-gray-500">Recommended: 500x500px, JPG/PNG format</p>
+                        <p className="text-sm text-gray-500">Recommended: 500x500px, JPG/PNG format (max 5MB)</p>
+                        <p className="text-xs text-gray-400 mt-2">
+                          Note: If image upload fails, category will be saved without image
+                        </p>
                       </div>
                       <input
                         type="file"
-                        onChange={(e) => setSelectedFile(e.target.files[0])}
+                        onChange={(e) => {
+                          const file = e.target.files[0]
+                          console.log('File selected:', file)
+                          if (file) {
+                            console.log('File details:', {
+                              name: file.name,
+                              size: file.size,
+                              type: file.type,
+                              lastModified: file.lastModified
+                            })
+                            if (file.size > 5 * 1024 * 1024) {
+                              alert('File is too large! Maximum size is 5MB.')
+                              e.target.value = ''
+                              setSelectedFile(null)
+                            } else {
+                              setSelectedFile(file)
+                            }
+                          } else {
+                            setSelectedFile(null)
+                          }
+                        }}
                         className="hidden"
                         accept="image/*"
                         disabled={submitting}
@@ -706,6 +781,25 @@ const AdminCategories = () => {
                   </div>
                 </label>
               </div>
+              
+              {/* Progress bar */}
+              {submitting && uploadProgress > 0 && (
+                <div className="bg-gray-50 rounded-xl p-4">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-sm font-medium text-gray-700">Saving category...</span>
+                    <span className="text-sm font-medium text-blue-600">{uploadProgress}%</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2.5">
+                    <div 
+                      className="bg-blue-600 h-2.5 rounded-full transition-all duration-300" 
+                      style={{ width: `${uploadProgress}%` }}
+                    ></div>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-2">
+                    {uploadProgress < 100 ? 'Processing...' : 'Complete!'}
+                  </p>
+                </div>
+              )}
               
               <div className="flex justify-end gap-3 pt-6 border-t">
                 <button

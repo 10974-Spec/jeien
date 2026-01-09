@@ -157,7 +157,7 @@ export const Header = () => {
               <span>Nairobi, Kenya</span>
             </div>
             <span className="text-blue-200">
-              Free delivery on orders over KSh 2,500
+Fast And Secure Delivery 
             </span>
           </div>
           <div className="flex items-center gap-4">
