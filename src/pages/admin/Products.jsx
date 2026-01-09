@@ -179,7 +179,7 @@ const fetchCategories = async () => {
       headers['Authorization'] = `Bearer ${token}`;
     }
     
-    const response = await fetch('http://localhost:5000/categories', {
+    const response = await fetch('https://jeien-backend.onrender.com/categories', {
       method: 'GET',
       headers: headers
     });
@@ -219,7 +219,7 @@ const fetchCategoriesAlternative = async () => {
     console.log('Trying alternative categories endpoint...');
     
     // Try with axios
-    const response = await axios.get('http://localhost:5000/categories', {
+    const response = await axios.get('https://jeien-backend.onrender.com/categories', {
       headers: {
         'Authorization': localStorage.getItem('token') ? `Bearer ${localStorage.getItem('token')}` : '',
         'Content-Type': 'application/json'
