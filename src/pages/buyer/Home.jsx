@@ -8,7 +8,7 @@ import {
   Sofa, Watch, Gamepad2, Plane, HeartPulse, Music, Camera, 
   Wrench, PawPrint, Gem, Heart, ShoppingCart, Eye, 
   ChevronLeft, ChevronRight as ChevronRightIcon,
-  Loader2
+  Loader2, Menu, X, User, LogOut, LogIn, UserPlus
 } from 'lucide-react'
 import productService from '../../services/product.service'
 import categoryService from '../../services/category.service'
@@ -964,7 +964,7 @@ const ProductsDisplay = ({ title, icon: Icon, description, products, seeMoreLink
   )
 }
 
-// Main Home Component - UPDATED WITH BANNER POSITIONS
+// Main Home Component - UPDATED WITH BANNER POSITIONS AND MOBILE NAV
 const BuyerHome = () => {
   const [featuredProducts, setFeaturedProducts] = useState([])
   const [newArrivals, setNewArrivals] = useState([])
@@ -977,6 +977,7 @@ const BuyerHome = () => {
   const [homeBottomBanners, setHomeBottomBanners] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   useEffect(() => {
     fetchHomeData()
@@ -1136,6 +1137,189 @@ const BuyerHome = () => {
     comparePrice: product.comparePrice || Math.round(product.price * (1 + Math.random() * 0.5))
   }))
 
+  // Mobile Navigation Component with Login/Signup
+  const MobileNavigation = () => (
+    <>
+      {/* Mobile Menu Button */}
+      <button
+        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+        className="lg:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
+      >
+        {isMobileMenuOpen ? (
+          <X className="h-6 w-6 text-gray-700" />
+        ) : (
+          <Menu className="h-6 w-6 text-gray-700" />
+        )}
+      </button>
+
+      {/* Mobile Menu Overlay */}
+      {isMobileMenuOpen && (
+        <div className="lg:hidden fixed inset-0 z-50">
+          {/* Backdrop */}
+          <div 
+            className="absolute inset-0 bg-black/50"
+            onClick={() => setIsMobileMenuOpen(false)}
+          />
+          
+          {/* Menu Panel */}
+          <motion.div
+            initial={{ x: '-100%' }}
+            animate={{ x: 0 }}
+            exit={{ x: '-100%' }}
+            transition={{ type: 'tween', duration: 0.3 }}
+            className="absolute left-0 top-0 bottom-0 w-80 bg-white shadow-xl"
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 border-b">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-blue-700 to-blue-800 flex items-center justify-center">
+                  <span className="text-white font-bold text-sm">J</span>
+                </div>
+                <span className="font-bold text-gray-900">JEIEN</span>
+              </div>
+              <button
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="p-2 rounded-lg hover:bg-gray-100"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Navigation Links */}
+            <div className="p-4 space-y-1">
+              <Link
+                to="/"
+                className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 transition-colors text-gray-700"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <HomeIcon className="h-5 w-5" />
+                Home
+              </Link>
+              <Link
+                to="/category/all"
+                className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 transition-colors text-gray-700"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <Shirt className="h-5 w-5" />
+                Categories
+              </Link>
+              <Link
+                to="/search?deals=true"
+                className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 transition-colors text-gray-700"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <Percent className="h-5 w-5" />
+                Deals
+              </Link>
+              <Link
+                to="/search?featured=true"
+                className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 transition-colors text-gray-700"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <Flame className="h-5 w-5" />
+                Featured
+              </Link>
+              <Link
+                to="/search?sort=newest"
+                className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 transition-colors text-gray-700"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <Zap className="h-5 w-5" />
+                New Arrivals
+              </Link>
+            </div>
+
+            {/* Divider */}
+            <div className="px-4 py-2">
+              <div className="border-t"></div>
+            </div>
+
+            {/* Auth Section - Added Login and Signup */}
+            <div className="p-4 space-y-1">
+              <div className="px-3 py-2">
+                <span className="text-xs font-medium text-gray-500 uppercase">Account</span>
+              </div>
+              
+              {/* Login Button */}
+              <Link
+                to="/login"
+                className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 transition-colors text-gray-700"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <LogIn className="h-5 w-5" />
+                Login
+              </Link>
+              
+              {/* Signup Button */}
+              <Link
+                to="/register"
+                className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 transition-colors text-gray-700"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <UserPlus className="h-5 w-5" />
+                Sign Up
+              </Link>
+              
+              {/* Vendor Registration */}
+              <Link
+                to="/register?vendor=true"
+                className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 transition-colors text-gray-700"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <User className="h-5 w-5" />
+                Become a Vendor
+              </Link>
+            </div>
+
+            {/* Divider */}
+            <div className="px-4 py-2">
+              <div className="border-t"></div>
+            </div>
+
+            {/* Additional Links */}
+            <div className="p-4 space-y-1">
+              <div className="px-3 py-2">
+                <span className="text-xs font-medium text-gray-500 uppercase">Help & Support</span>
+              </div>
+              <Link
+                to="/help"
+                className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 transition-colors text-gray-700"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <Shield className="h-5 w-5" />
+                Help Center
+              </Link>
+              <Link
+                to="/contact"
+                className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 transition-colors text-gray-700"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <Clock className="h-5 w-5" />
+                Contact Us
+              </Link>
+            </div>
+
+            {/* Sign Out Button (if logged in) */}
+            {/* Uncomment when you have auth state
+            <div className="p-4 mt-auto border-t">
+              <button
+                className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 transition-colors text-red-600 w-full"
+                onClick={() => {
+                  // Handle sign out
+                  setIsMobileMenuOpen(false)
+                }}
+              >
+                <LogOut className="h-5 w-5" />
+                Sign Out
+              </button>
+            </div>
+            */}
+          </motion.div>
+        </div>
+      )}
+    </>
+  )
+
   if (error) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -1156,6 +1340,19 @@ const BuyerHome = () => {
   if (loading) {
     return (
       <div className="min-h-screen">
+        {/* Mobile Navigation Loading */}
+        <nav className="sticky top-0 z-40 bg-white border-b">
+          <div className="container mx-auto px-4 py-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-gray-200 animate-pulse"></div>
+                <div className="h-6 w-20 bg-gray-200 rounded animate-pulse"></div>
+              </div>
+              <div className="h-8 w-8 rounded-lg bg-gray-200 animate-pulse"></div>
+            </div>
+          </div>
+        </nav>
+
         {/* Hero Banner Loading */}
         <section className="relative overflow-hidden">
           <div className="container mx-auto py-8 px-4">
@@ -1197,6 +1394,9 @@ const BuyerHome = () => {
 
   return (
     <div className="min-h-screen">
+      {/* Mobile Navigation */}
+      <MobileNavigation />
+
       {/* Hero Banner - HOME_TOP position */}
       <section className="relative overflow-hidden">
         <div className="container mx-auto py-8 px-4">
