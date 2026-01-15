@@ -84,7 +84,7 @@ const navLinks = [
 ];
 
 // Header Component
-const Header = ({ user, isAuthenticated, handleLogout, getDashboardPath }) => {
+const Header = ({ user, isAuthenticated, handleLogout, getDashboardPath, userRole }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
@@ -127,6 +127,13 @@ const Header = ({ user, isAuthenticated, handleLogout, getDashboardPath }) => {
     } else {
       navigate('/login');
     }
+  };
+
+  // Get user role for display
+  const getUserRole = () => {
+    if (userRole === 'admin') return 'Admin';
+    if (userRole === 'vendor') return 'Vendor';
+    return 'User';
   };
 
   return (
@@ -205,14 +212,14 @@ const Header = ({ user, isAuthenticated, handleLogout, getDashboardPath }) => {
                 </Badge>
               </Button>
               
-              {/* Dashboard Button - Visible on mobile when authenticated */}
+              {/* Dashboard Button - Always visible on mobile when authenticated */}
               {isAuthenticated && (
                 <Button 
                   variant="ghost" 
                   size="icon" 
                   className="sm:hidden relative text-gray-600 hover:text-blue-700"
                   onClick={handleDashboardClick}
-                  title="Dashboard"
+                  title={`${getUserRole()} Dashboard`}
                 >
                   <LayoutDashboard className="h-5 w-5" />
                 </Button>
@@ -369,6 +376,38 @@ const Header = ({ user, isAuthenticated, handleLogout, getDashboardPath }) => {
           className="bg-white border-b border-gray-200 md:hidden absolute left-0 right-0 top-full shadow-lg"
         >
           <div className="container mx-auto py-4 px-4 space-y-2">
+            {/* User Info in Mobile Menu */}
+            {isAuthenticated && (
+              <div className="px-4 py-3 border-b border-gray-200">
+                <div className="flex items-center gap-3">
+                  {user?.profileImage ? (
+                    <img
+                      src={user.profileImage}
+                      alt={user?.name}
+                      className="w-10 h-10 rounded-full border-2 border-blue-100"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-600 to-blue-700 flex items-center justify-center">
+                      <User className="h-5 w-5 text-white" />
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-gray-900 truncate">{user?.name || 'User'}</p>
+                    <p className="text-xs text-gray-500 flex items-center gap-1">
+                      <span className={`px-1.5 py-0.5 rounded-full text-xs font-medium ${
+                        userRole === 'admin' ? 'bg-red-100 text-red-800' :
+                        userRole === 'vendor' ? 'bg-blue-100 text-blue-800' :
+                        'bg-green-100 text-green-800'
+                      }`}>
+                        {getUserRole()}
+                      </span>
+                      <span className="truncate">{user?.email}</span>
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+            
             {/* Main Navigation in Mobile */}
             {navLinks.map((item) => (
               <button
@@ -420,7 +459,9 @@ const Header = ({ user, isAuthenticated, handleLogout, getDashboardPath }) => {
                   >
                     <div className="flex items-center gap-3">
                       <LayoutDashboard className="h-4 w-4" />
-                      Dashboard
+                      {userRole === 'admin' ? 'Admin Dashboard' :
+                       userRole === 'vendor' ? 'Vendor Dashboard' :
+                       'My Dashboard'}
                     </div>
                   </button>
                   <button
@@ -466,13 +507,16 @@ const Header = ({ user, isAuthenticated, handleLogout, getDashboardPath }) => {
 // Main PublicLayout Component
 const PublicLayout = ({ children }) => {
   const { user, logout, isAuthenticated } = useAuth()
-  const { getDashboardPath } = useRole()
+  const { getDashboardPath, getUserRole } = useRole()
   const navigate = useNavigate()
 
   const handleLogout = () => {
     logout()
     navigate('/')
   }
+
+  // Get current user role
+  const userRole = getUserRole()
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -481,6 +525,7 @@ const PublicLayout = ({ children }) => {
         isAuthenticated={isAuthenticated}
         handleLogout={handleLogout}
         getDashboardPath={getDashboardPath}
+        userRole={userRole}
       />
 
       <main className="flex-1 container mx-auto px-4 py-6">
