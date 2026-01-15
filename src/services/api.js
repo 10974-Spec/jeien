@@ -1,115 +1,62 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://jeien-backend.onrender.com';
-
-// Request Queue Class
-class RequestQueue {
-  constructor(maxRequestsPerSecond = 2) {
-    this.queue = [];
-    this.processing = false;
-    this.maxRequestsPerSecond = maxRequestsPerSecond;
-    this.lastRequestTime = 0;
-    this.requestCount = 0;
-    this.resetInterval = null;
-    
-    // Reset request count every second
-    this.resetInterval = setInterval(() => {
-      this.requestCount = 0;
-    }, 1000);
+// Detect environment and set API URL
+const getApiBaseUrl = () => {
+  // If running on Render (production frontend)
+  if (window.location.hostname.includes('jeien.com') || 
+      window.location.hostname.includes('onrender.com')) {
+    return 'https://jeien-backend.onrender.com';
   }
-
-  async add(request) {
-    return new Promise((resolve, reject) => {
-      this.queue.push({ request, resolve, reject });
-      this.process();
-    });
+  
+  // Use environment variable if set
+  if (import.meta.env.VITE_API_BASE_URL) {
+    return import.meta.env.VITE_API_BASE_URL;
   }
+  
+  // Default to local backend for development
+  return 'http://localhost:5000';
+};
 
-  async process() {
-    if (this.processing || this.queue.length === 0) return;
-    
-    this.processing = true;
-    
-    while (this.queue.length > 0) {
-      // Check rate limit
-      if (this.requestCount >= this.maxRequestsPerSecond) {
-        await new Promise(resolve => setTimeout(resolve, 1000 / this.maxRequestsPerSecond));
-        this.requestCount = 0;
-      }
-      
-      const now = Date.now();
-      const timeSinceLastRequest = now - this.lastRequestTime;
-      const minDelay = 1000 / this.maxRequestsPerSecond;
-      
-      if (timeSinceLastRequest < minDelay) {
-        await new Promise(resolve => setTimeout(resolve, minDelay - timeSinceLastRequest));
-      }
-      
-      const { request, resolve, reject } = this.queue.shift();
-      this.lastRequestTime = Date.now();
-      this.requestCount++;
-      
-      try {
-        const result = await request();
-        resolve(result);
-      } catch (error) {
-        reject(error);
-      }
-    }
-    
-    this.processing = false;
-  }
+const API_BASE_URL = getApiBaseUrl();
 
-  destroy() {
-    if (this.resetInterval) {
-      clearInterval(this.resetInterval);
-    }
-  }
-}
-
-// Initialize queue
-const requestQueue = new RequestQueue(2); // 2 requests per second
+console.log(`🌐 API Base URL: ${API_BASE_URL}`);
+console.log(`🚀 Environment: ${import.meta.env.MODE}`);
+console.log(`📍 Hostname: ${window.location.hostname}`);
 
 // Base axios instance
 const axiosInstance = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 30000,
+  timeout: 30000, // Increased timeout for Render
   headers: {
     'Accept': 'application/json',
-    'X-Client': 'web-frontend'
+    'Content-Type': 'application/json',
+    'X-Client': 'web-frontend',
+    'X-Client-Version': '1.0.0'
   }
 });
 
 // Request interceptor
 axiosInstance.interceptors.request.use(
   (config) => {
+    // Get token from localStorage
     const token = localStorage.getItem('token');
     
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     
-    // Add API key if available
-    const apiKey = localStorage.getItem('api_key');
-    if (apiKey) {
-      config.headers['X-API-Key'] = apiKey;
-    }
-    
-    // Handle Content-Type for FormData
-    if (!(config.data instanceof FormData)) {
-      config.headers['Content-Type'] = 'application/json';
-    } else {
-      // Let browser set the boundary
-      delete config.headers['Content-Type'];
-    }
-    
     // Add request ID for tracking
-    config.headers['X-Request-ID'] = Date.now() + Math.random().toString(36).substr(2, 9);
+    config.headers['X-Request-ID'] = Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+    
+    // Log request in development
+    if (import.meta.env.DEV) {
+      console.log(`📤 ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`);
+    }
     
     return config;
   },
   (error) => {
-    console.error('Request interceptor error:', error);
+    console.error('Request error:', error);
     return Promise.reject(error);
   }
 );
@@ -117,126 +64,119 @@ axiosInstance.interceptors.request.use(
 // Response interceptor
 axiosInstance.interceptors.response.use(
   (response) => {
-    // Log rate limit headers
-    const rateLimitRemaining = response.headers['x-ratelimit-remaining'];
-    const rateLimitReset = response.headers['x-ratelimit-reset'];
-    
-    if (rateLimitRemaining && parseInt(rateLimitRemaining) < 10) {
-      console.warn(`Rate limit low: ${rateLimitRemaining} requests remaining. Reset at: ${rateLimitReset}`);
+    // Log response in development
+    if (import.meta.env.DEV) {
+      console.log(`📥 ${response.status} ${response.config.method?.toUpperCase()} ${response.config.url}`);
     }
-    
     return response;
   },
-  async (error) => {
+  (error) => {
     const originalRequest = error.config;
     
-    // Log error details
     console.error('API Error:', {
-      url: originalRequest?.url,
-      method: originalRequest?.method,
+      url: error.config?.url,
+      method: error.config?.method,
       status: error.response?.status,
       message: error.message,
-      data: error.response?.data
+      baseURL: error.config?.baseURL
     });
-    
-    // Handle 429 - Rate Limit
-    if (error.response?.status === 429) {
-      const retryAfter = error.response.headers['retry-after'] || 5;
-      console.warn(`Rate limited. Retrying after ${retryAfter} seconds...`);
-      
-      await new Promise(resolve => setTimeout(resolve, retryAfter * 1000));
-      
-      // Retry the request
-      return axiosInstance(originalRequest);
-    }
-    
-    // Handle 401 - Unauthorized
+
+    // Handle 401 Unauthorized
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
-      
-      // Clear auth data
       localStorage.removeItem('token');
       localStorage.removeItem('user');
+      delete axiosInstance.defaults.headers.common['Authorization'];
       
-      // Redirect to login if not already there
       if (!window.location.pathname.includes('/login')) {
         window.location.href = '/login?session=expired';
       }
     }
-    
-    // Handle network errors
+
+    // Handle network errors (Render might be sleeping)
     if (!error.response) {
-      console.error('Network error - Check internet connection');
+      console.error('Network error - Backend might be sleeping on Render');
       
-      // Return a structured error response
-      return Promise.reject({
-        success: false,
-        message: 'Network error. Please check your internet connection.',
-        isNetworkError: true,
-        originalError: error
-      });
+      // If using Render backend and it's sleeping, show message
+      if (API_BASE_URL.includes('onrender.com')) {
+        return Promise.reject({
+          success: false,
+          message: 'Backend is waking up. Please wait a moment and try again.',
+          isRenderSleeping: true,
+          originalError: error
+        });
+      }
     }
-    
-    // Handle server errors
-    if (error.response?.status >= 500) {
-      console.error('Server error:', error.response.data);
-      
-      return Promise.reject({
-        success: false,
-        message: 'Server error. Please try again later.',
-        status: error.response.status,
-        data: error.response.data
-      });
-    }
-    
-    // For other errors, pass through the error response
-    return Promise.reject(error.response?.data || {
-      success: false,
-      message: 'An unexpected error occurred'
-    });
+
+    return Promise.reject(error);
   }
 );
 
-// Queued API wrapper
+// Helper to build URLs with /api prefix
+const buildUrl = (url) => {
+  return `/api${url.startsWith('/') ? url : '/' + url}`;
+};
+
+// API wrapper
 const api = {
-  get: (url, config = {}) => requestQueue.add(() => axiosInstance.get(url, config)),
-  post: (url, data, config = {}) => requestQueue.add(() => axiosInstance.post(url, data, config)),
-  put: (url, data, config = {}) => requestQueue.add(() => axiosInstance.put(url, data, config)),
-  delete: (url, config = {}) => requestQueue.add(() => axiosInstance.delete(url, config)),
-  patch: (url, data, config = {}) => requestQueue.add(() => axiosInstance.patch(url, data, config)),
-  head: (url, config = {}) => requestQueue.add(() => axiosInstance.head(url, config)),
-  options: (url, config = {}) => requestQueue.add(() => axiosInstance.options(url, config)),
+  // HTTP methods
+  get: (url, config = {}) => axiosInstance.get(buildUrl(url), config),
+  post: (url, data, config = {}) => axiosInstance.post(buildUrl(url), data, config),
+  put: (url, data, config = {}) => axiosInstance.put(buildUrl(url), data, config),
+  delete: (url, config = {}) => axiosInstance.delete(buildUrl(url), config),
+  patch: (url, data, config = {}) => axiosInstance.patch(buildUrl(url), data, config),
   
-  // Raw axios for non-queued requests
+  // Auth endpoints
+  login: (email, password) => axiosInstance.post('/api/auth/login', { email, password }),
+  register: (userData) => axiosInstance.post('/api/auth/register', userData),
+  logout: () => axiosInstance.post('/api/auth/logout'),
+  getProfile: () => axiosInstance.get('/api/auth/me'),
+  
+  // Health check
+  health: () => axiosInstance.get('/api/health'),
+  
+  // Test endpoints
+  testBackend: () => axiosInstance.get('/api/health').then(res => ({
+    url: API_BASE_URL,
+    status: res.status,
+    data: res.data
+  })),
+  
+  // Raw axios instance
   raw: axiosInstance,
   
-  // Cancel token source
-  CancelToken: axios.CancelToken,
-  isCancel: axios.isCancel,
+  // Get current API URL
+  getApiUrl: () => API_BASE_URL,
   
-  // Clear queue
-  clearQueue: () => {
-    requestQueue.queue = [];
-  },
-  
-  // Get queue stats
-  getQueueStats: () => ({
-    queueLength: requestQueue.queue.length,
-    isProcessing: requestQueue.processing,
-    requestCount: requestQueue.requestCount
-  }),
-  
-  // Set rate limit
-  setRateLimit: (maxRequestsPerSecond) => {
-    requestQueue.maxRequestsPerSecond = maxRequestsPerSecond;
+  // Switch API URL (useful for testing)
+  switchBackend: (newUrl) => {
+    console.log(`🔄 Switching backend from ${API_BASE_URL} to ${newUrl}`);
+    localStorage.setItem('preferred_backend', newUrl);
+    window.location.reload();
   }
 };
 
-// Cleanup on page unload
+// Test backend connection on startup
 if (typeof window !== 'undefined') {
-  window.addEventListener('beforeunload', () => {
-    requestQueue.destroy();
-  });
+  // Wait a bit after page load
+  setTimeout(() => {
+    api.health()
+      .then(res => {
+        console.log(`✅ Connected to backend: ${API_BASE_URL}`);
+        console.log('Backend info:', res.data);
+      })
+      .catch(err => {
+        console.warn(`⚠️ Could not connect to ${API_BASE_URL}:`, err.message);
+        
+        // If local backend fails, suggest switching
+        if (API_BASE_URL.includes('localhost') && import.meta.env.DEV) {
+          console.log('💡 Tip: Is your local backend running? Try:');
+          console.log('    npm run dev (in backend folder)');
+          console.log('💡 Or switch to production backend:');
+          console.log('    api.switchBackend("https://jeien-backend.onrender.com")');
+        }
+      });
+  }, 2000);
 }
 
 export default api;

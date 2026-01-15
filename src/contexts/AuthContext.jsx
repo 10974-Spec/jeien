@@ -1,8 +1,17 @@
-import React, { createContext, useState, useEffect, useCallback } from 'react'
+import React, { createContext, useState, useEffect, useCallback, useContext } from 'react'
 import api from '../services/api'
-import authService from '../services/auth.service'
 
+// Create and export AuthContext
 export const AuthContext = createContext()
+
+// Custom hook to use AuthContext
+export const useAuth = () => {
+  const context = useContext(AuthContext)
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider')
+  }
+  return context
+}
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null)
@@ -17,12 +26,20 @@ export const AuthProvider = ({ children }) => {
     }
 
     try {
-      const response = await authService.getProfile()
-      setUser(response.data.user)
+      // Set auth header
+      api.raw.defaults.headers.common['Authorization'] = `Bearer ${token}`
+      
+      // Get user profile
+      const response = await api.get('/auth/me')
+      if (response.data.success) {
+        setUser(response.data.user)
+        localStorage.setItem('user', JSON.stringify(response.data.user))
+      }
     } catch (err) {
+      console.error('Failed to load user:', err)
       localStorage.removeItem('token')
       localStorage.removeItem('user')
-      console.error('Failed to load user:', err)
+      delete api.raw.defaults.headers.common['Authorization']
     } finally {
       setLoading(false)
     }
@@ -34,119 +51,113 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      const response = await authService.login({ email, password })
-      const { token, user } = response.data
+      console.log('Logging in with:', email)
       
-      localStorage.setItem('token', token)
-      localStorage.setItem('user', JSON.stringify(user))
+      const response = await api.post('/auth/login', { email, password })
+      console.log('Login response:', response.data)
       
-      api.defaults.headers.common['Authorization'] = `Bearer ${token}`
-      setUser(user)
-      setError(null)
-      
-      return { success: true, user }
+      if (response.data.success && response.data.token) {
+        const { token, user } = response.data
+        
+        // Store in localStorage
+        localStorage.setItem('token', token)
+        localStorage.setItem('user', JSON.stringify(user))
+        
+        // Set auth header
+        api.raw.defaults.headers.common['Authorization'] = `Bearer ${token}`
+        
+        // Update state
+        setUser(user)
+        setError(null)
+        
+        return { success: true, user }
+      } else {
+        throw new Error(response.data.message || 'Login failed')
+      }
     } catch (err) {
-      setError(err.response?.data?.message || 'Login failed')
-      return { success: false, error: err.response?.data?.message }
+      console.error('Login error:', err)
+      const errorMessage = err.response?.data?.message || err.message || 'Login failed'
+      setError(errorMessage)
+      return { success: false, error: errorMessage }
+    }
+  }
+
+  const testLogin = async (email, password) => {
+    try {
+      console.log('Test login with:', email)
+      
+      const response = await api.post('/auth/test-login', { email, password })
+      console.log('Test login response:', response.data)
+      
+      if (response.data.success && response.data.token) {
+        const { token, user } = response.data
+        
+        localStorage.setItem('token', token)
+        localStorage.setItem('user', JSON.stringify(user))
+        
+        api.raw.defaults.headers.common['Authorization'] = `Bearer ${token}`
+        
+        setUser(user)
+        setError(null)
+        
+        return { success: true, user }
+      }
+    } catch (err) {
+      console.error('Test login error:', err)
+      return { success: false, error: err.message }
     }
   }
 
   const register = async (userData) => {
     try {
-      const response = await authService.register(userData)
-      const { token, user } = response.data
+      const response = await api.post('/auth/register', userData)
       
-      localStorage.setItem('token', token)
-      localStorage.setItem('user', JSON.stringify(user))
-      
-      api.defaults.headers.common['Authorization'] = `Bearer ${token}`
-      setUser(user)
-      setError(null)
-      
-      return { success: true, user }
+      if (response.data.success && response.data.token) {
+        const { token, user } = response.data
+        
+        localStorage.setItem('token', token)
+        localStorage.setItem('user', JSON.stringify(user))
+        
+        api.raw.defaults.headers.common['Authorization'] = `Bearer ${token}`
+        setUser(user)
+        setError(null)
+        
+        return { success: true, user }
+      } else {
+        throw new Error(response.data.message || 'Registration failed')
+      }
     } catch (err) {
-      setError(err.response?.data?.message || 'Registration failed')
-      return { success: false, error: err.response?.data?.message }
-    }
-  }
-
-  const googleLogin = async (tokenId) => {
-    try {
-      const response = await authService.googleAuth({ tokenId })
-      const { token, user } = response.data
-      
-      localStorage.setItem('token', token)
-      localStorage.setItem('user', JSON.stringify(user))
-      
-      api.defaults.headers.common['Authorization'] = `Bearer ${token}`
-      setUser(user)
-      setError(null)
-      
-      return { success: true, user }
-    } catch (err) {
-      setError(err.response?.data?.message || 'Google login failed')
-      return { success: false, error: err.response?.data?.message }
+      const errorMessage = err.response?.data?.message || err.message || 'Registration failed'
+      setError(errorMessage)
+      return { success: false, error: errorMessage }
     }
   }
 
   const logout = () => {
     localStorage.removeItem('token')
     localStorage.removeItem('user')
-    delete api.defaults.headers.common['Authorization']
+    delete api.raw.defaults.headers.common['Authorization']
     setUser(null)
     window.location.href = '/login'
   }
 
-  const updateProfile = async (profileData) => {
-    try {
-      const response = await authService.updateProfile(profileData)
-      const updatedUser = response.data.user
-      
-      setUser(updatedUser)
-      localStorage.setItem('user', JSON.stringify(updatedUser))
-      
-      return { success: true, user: updatedUser }
-    } catch (err) {
-      setError(err.response?.data?.message || 'Update failed')
-      return { success: false, error: err.response?.data?.message }
-    }
-  }
-
-  const updateProfileImage = async (imageFile) => {
-    try {
-      const formData = new FormData()
-      formData.append('image', imageFile)
-      
-      const response = await authService.updateProfileImage(formData)
-      const updatedUser = response.data.user
-      
-      setUser(updatedUser)
-      localStorage.setItem('user', JSON.stringify(updatedUser))
-      
-      return { success: true, user: updatedUser }
-    } catch (err) {
-      setError(err.response?.data?.message || 'Image upload failed')
-      return { success: false, error: err.response?.data?.message }
-    }
+  const value = {
+    user,
+    loading,
+    error,
+    login,
+    testLogin,
+    register,
+    logout,
+    loadUser,
+    isAuthenticated: !!user,
   }
 
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        loading,
-        error,
-        login,
-        register,
-        googleLogin,
-        logout,
-        updateProfile,
-        updateProfileImage,
-        loadUser,
-        isAuthenticated: !!user,
-      }}
-    >
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   )
 }
+
+export default AuthContext
