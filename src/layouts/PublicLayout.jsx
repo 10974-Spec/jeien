@@ -1,7 +1,7 @@
 import React, { useState, useContext, useEffect } from 'react'
 import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Search, ShoppingCart, Heart, User, Menu, MapPin, ChevronDown, Phone, LogOut } from 'lucide-react'
+import { Search, ShoppingCart, Heart, User, Menu, MapPin, ChevronDown, Phone, LogOut, LayoutDashboard } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
 import { useRole } from '../hooks/useRole'
 
@@ -120,6 +120,15 @@ const Header = ({ user, isAuthenticated, handleLogout, getDashboardPath }) => {
     }
   };
 
+  const handleDashboardClick = () => {
+    if (isAuthenticated) {
+      const dashboardPath = getDashboardPath();
+      navigate(dashboardPath);
+    } else {
+      navigate('/login');
+    }
+  };
+
   return (
     <header className="sticky top-0 z-50 w-full">
       {/* Top Bar */}
@@ -131,7 +140,7 @@ const Header = ({ user, isAuthenticated, handleLogout, getDashboardPath }) => {
               <span className="hidden sm:inline">Nairobi, Kenya</span>
             </div>
             <span className="hidden md:inline text-blue-200">
-Fast And Secure Deelivery 
+              Fast And Secure Delivery 
             </span>
           </div>
           <div className="flex items-center gap-4">
@@ -183,6 +192,7 @@ Fast And Secure Deelivery
 
             {/* Actions */}
             <div className="flex items-center gap-2">
+              {/* Wishlist Button - Hidden on mobile */}
               <Button 
                 variant="ghost" 
                 size="icon" 
@@ -195,6 +205,20 @@ Fast And Secure Deelivery
                 </Badge>
               </Button>
               
+              {/* Dashboard Button - Visible on mobile when authenticated */}
+              {isAuthenticated && (
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="sm:hidden relative text-gray-600 hover:text-blue-700"
+                  onClick={handleDashboardClick}
+                  title="Dashboard"
+                >
+                  <LayoutDashboard className="h-5 w-5" />
+                </Button>
+              )}
+              
+              {/* Cart Button */}
               <Button 
                 variant="ghost" 
                 size="icon" 
@@ -207,6 +231,7 @@ Fast And Secure Deelivery
                 </Badge>
               </Button>
 
+              {/* Desktop User Actions */}
               <div className="hidden sm:flex items-center gap-2 pl-2 border-l border-gray-200">
                 {isAuthenticated ? (
                   <div className="flex items-center gap-2">
@@ -223,8 +248,9 @@ Fast And Secure Deelivery
                       variant="ghost" 
                       size="sm" 
                       className="gap-2 text-gray-600 hover:text-blue-700"
-                      onClick={() => handleNavClick(getDashboardPath())}
+                      onClick={handleDashboardClick}
                     >
+                      <LayoutDashboard className="h-4 w-4" />
                       <span className="hidden lg:inline">Dashboard</span>
                     </Button>
                     <Button 
@@ -249,6 +275,7 @@ Fast And Secure Deelivery
                 )}
               </div>
 
+              {/* Mobile Menu Button */}
               <Button 
                 variant="ghost" 
                 size="icon" 
@@ -373,25 +400,37 @@ Fast And Secure Deelivery
                     className="w-full px-4 py-3 text-left text-gray-700 hover:bg-gray-50 hover:text-blue-700 rounded-lg"
                     onClick={handleAccountClick}
                   >
-                    Profile
+                    <div className="flex items-center gap-3">
+                      <User className="h-4 w-4" />
+                      Profile
+                    </div>
                   </button>
                   <button
                     className="w-full px-4 py-3 text-left text-gray-700 hover:bg-gray-50 hover:text-blue-700 rounded-lg"
                     onClick={() => handleNavClick('/cart')}
                   >
-                    Cart
+                    <div className="flex items-center gap-3">
+                      <ShoppingCart className="h-4 w-4" />
+                      Cart
+                    </div>
                   </button>
                   <button
                     className="w-full px-4 py-3 text-left text-gray-700 hover:bg-gray-50 hover:text-blue-700 rounded-lg"
-                    onClick={() => handleNavClick(getDashboardPath())}
+                    onClick={handleDashboardClick}
                   >
-                    Dashboard
+                    <div className="flex items-center gap-3">
+                      <LayoutDashboard className="h-4 w-4" />
+                      Dashboard
+                    </div>
                   </button>
                   <button
                     className="w-full px-4 py-3 text-left text-red-600 hover:bg-red-50 hover:text-red-700 rounded-lg"
                     onClick={handleLogout}
                   >
-                    Logout
+                    <div className="flex items-center gap-3">
+                      <LogOut className="h-4 w-4" />
+                      Logout
+                    </div>
                   </button>
                 </>
               ) : (
@@ -400,13 +439,19 @@ Fast And Secure Deelivery
                     className="w-full px-4 py-3 text-left text-gray-700 hover:bg-gray-50 hover:text-blue-700 rounded-lg"
                     onClick={() => handleNavClick('/login')}
                   >
-                    Sign In
+                    <div className="flex items-center gap-3">
+                      <User className="h-4 w-4" />
+                      Sign In
+                    </div>
                   </button>
                   <button
                     className="w-full px-4 py-3 text-left text-gray-700 hover:bg-gray-50 hover:text-blue-700 rounded-lg"
                     onClick={() => handleNavClick('/register')}
                   >
-                    Register
+                    <div className="flex items-center gap-3">
+                      <User className="h-4 w-4" />
+                      Register
+                    </div>
                   </button>
                 </>
               )}
