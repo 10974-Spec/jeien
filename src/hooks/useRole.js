@@ -1,5 +1,5 @@
 // hooks/useRole.js
-import { useAuth } from './useAuth'
+import { useAuth } from '../contexts/AuthContext'
 
 export const useRole = () => {
   const { user } = useAuth()
@@ -11,20 +11,37 @@ export const useRole = () => {
   const getDashboardPath = () => {
     const role = getUserRole()
     
-    switch(role) {
-      case 'admin':
+    // Handle both uppercase and lowercase roles
+    switch(role.toUpperCase()) {
+      case 'ADMIN':
+      case 'ADMINISTRATOR':
         return '/admin/dashboard'
-      case 'vendor':
+      case 'VENDOR':
+      case 'SELLER':
         return '/vendor/dashboard'
-      case 'buyer':
+      case 'BUYER':
+      case 'USER':
+      case 'CUSTOMER':
       default:
-        return '/profile' // or '/user/dashboard' if you have one
+        return '/profile'
     }
   }
 
-  const isAdmin = () => getUserRole() === 'admin'
-  const isVendor = () => getUserRole() === 'vendor'
-  const isBuyer = () => getUserRole() === 'buyer'
+  const isAdmin = () => {
+    const role = getUserRole()
+    return role.toUpperCase() === 'ADMIN' || role.toUpperCase() === 'ADMINISTRATOR'
+  }
+  
+  const isVendor = () => {
+    const role = getUserRole()
+    return role.toUpperCase() === 'VENDOR' || role.toUpperCase() === 'SELLER'
+  }
+  
+  const isBuyer = () => {
+    const role = getUserRole()
+    const upperRole = role.toUpperCase()
+    return upperRole === 'BUYER' || upperRole === 'USER' || upperRole === 'CUSTOMER'
+  }
 
   return {
     getUserRole,

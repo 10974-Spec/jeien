@@ -26,8 +26,8 @@ import VendorStoreSettings from '../pages/vendor/StoreSettings'
 import VendorPayments from '../pages/vendor/Payments'
 
 import Home from '../pages/buyer/Home'
-import Shop from '../pages/buyer/Shop' // Import the Shop page
-import About from '../pages/buyer/About' // Import the About page
+import Shop from '../pages/buyer/Shop'
+import About from '../pages/buyer/About'
 import Category from '../pages/buyer/Category'
 import ProductDetails from '../pages/buyer/ProductDetails'
 import Cart from '../pages/buyer/Cart'
@@ -39,14 +39,30 @@ const PrivateRoute = ({ children, allowedRoles }) => {
   const { user, loading } = useContext(AuthContext)
 
   if (loading) {
-    return <div>Loading...</div>
+    return <div className="flex items-center justify-center min-h-screen">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+    </div>
   }
 
   if (!user) {
     return <Navigate to="/login" replace />
   }
 
-  if (allowedRoles && !allowedRoles.includes(user.role)) {
+  // Normalize the user's role to uppercase for comparison
+  const userRole = user?.role?.toUpperCase() || ''
+  
+  // Normalize allowed roles to uppercase
+  const normalizedAllowedRoles = allowedRoles 
+    ? allowedRoles.map(role => role.toUpperCase())
+    : []
+
+  if (allowedRoles && !normalizedAllowedRoles.includes(userRole)) {
+    // Redirect user based on their actual role
+    if (userRole === 'ADMIN') {
+      return <Navigate to="/admin/dashboard" replace />
+    } else if (userRole === 'VENDOR') {
+      return <Navigate to="/vendor/dashboard" replace />
+    }
     return <Navigate to="/" replace />
   }
 
@@ -57,13 +73,20 @@ const PublicRoute = ({ children }) => {
   const { user, loading } = useContext(AuthContext)
 
   if (loading) {
-    return <div>Loading...</div>
+    return <div className="flex items-center justify-center min-h-screen">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+    </div>
   }
 
   if (user) {
-    const role = user.role
-    if (role === 'ADMIN' || role === 'VENDOR') {
-      return <Navigate to={`/${role.toLowerCase()}/dashboard`} replace />
+    // Normalize role to uppercase
+    const role = user?.role?.toUpperCase() || ''
+    
+    if (role === 'ADMIN') {
+      return <Navigate to="/admin/dashboard" replace />
+    }
+    if (role === 'VENDOR') {
+      return <Navigate to="/vendor/dashboard" replace />
     }
     return <Navigate to="/" replace />
   }
@@ -71,22 +94,25 @@ const PublicRoute = ({ children }) => {
   return children
 }
 
+// ADMIN routes - only accessible to users with 'admin' role
 const AdminRoutes = () => (
-  <PrivateRoute allowedRoles={['ADMIN']}>
+  <PrivateRoute allowedRoles={['admin']}>
     <AdminLayout>
       <Outlet />
     </AdminLayout>
   </PrivateRoute>
 )
 
+// VENDOR routes - accessible to both 'vendor' and 'admin' roles
 const VendorRoutes = () => (
-  <PrivateRoute allowedRoles={['VENDOR', 'ADMIN']}>
+  <PrivateRoute allowedRoles={['vendor', 'admin']}>
     <VendorLayout>
       <Outlet />
     </VendorLayout>
   </PrivateRoute>
 )
 
+// BUYER/PUBLIC routes - accessible to everyone
 const BuyerRoutes = () => (
   <PublicLayout>
     <Outlet />
@@ -138,19 +164,29 @@ function AppRouter() {
       {/* Buyer/Public Routes */}
       <Route path="/" element={<BuyerRoutes />}>
         <Route index element={<Home />} />
-        <Route path="shop" element={<Shop />} /> {/* Add Shop route */}
-        <Route path="about" element={<About />} /> {/* Add About route */}
+        <Route path="shop" element={<Shop />} />
+        <Route path="about" element={<About />} />
         <Route path="category/:id" element={<Category />} />
         <Route path="product/:id" element={<ProductDetails />} />
         <Route path="cart" element={<Cart />} />
         <Route path="checkout" element={<Checkout />} />
-        <Route path="profile" element={<BuyerProfile />} />
-        <Route path="orders" element={<BuyerOrders />} />
+        
+        {/* Protected buyer-only routes */}
+        <Route path="profile" element={
+          <PrivateRoute allowedRoles={['buyer', 'vendor', 'admin']}>
+            <BuyerProfile />
+          </PrivateRoute>
+        } />
+        <Route path="orders" element={
+          <PrivateRoute allowedRoles={['buyer', 'vendor', 'admin']}>
+            <BuyerOrders />
+          </PrivateRoute>
+        } />
         
         {/* Add search redirect to shop page */}
         <Route path="search" element={<Navigate to="/shop" replace />} />
         
-        {/* Add vendors page (you can create this later) */}
+        {/* Add vendors page */}
         <Route path="vendors" element={
           <div className="min-h-screen flex items-center justify-center">
             <div className="text-center">
