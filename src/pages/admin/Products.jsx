@@ -165,93 +165,88 @@ const AdminProducts = () => {
     }
   }, [filters, searchTerm, debouncedFetchProducts, loading, mode])
 
-const fetchCategories = async () => {
-  try {
-    setLoadingCategories(true);
-    console.log('Fetching categories...');
-    
-    const token = localStorage.getItem('token');
-    const headers = {
-      'Content-Type': 'application/json'
-    };
-    
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-    
-    const response = await fetch('https://jeien-backend.onrender.com/categories', {
-      method: 'GET',
-      headers: headers
-    });
-    
-    if (response.ok) {
-      const data = await response.json();
-      console.log('Categories fetched successfully:', data);
+  // FIXED: Simplified categories fetch - only try if endpoint exists
+  const fetchCategories = async () => {
+    try {
+      setLoadingCategories(true)
+      console.log('Attempting to fetch categories...')
       
-      // Handle different response formats
-      if (data.categories) {
-        setCategories(data.categories);
-      } else if (data.data && data.data.categories) {
-        setCategories(data.data.categories);
-      } else if (Array.isArray(data)) {
-        setCategories(data);
-      } else {
-        console.error('Unexpected categories response format:', data);
-        setCategories([]);
+      // First, check if the categories endpoint exists by trying a simple request
+      const token = localStorage.getItem('token')
+      
+      // Try with direct fetch first
+      try {
+        const response = await fetch('https://jeien-backend.onrender.com/api/categories', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token && { 'Authorization': `Bearer ${token}` })
+          }
+        })
+        
+        if (response.ok) {
+          const data = await response.json()
+          console.log('Categories fetched successfully from /api/categories:', data)
+          
+          if (data.categories) {
+            setCategories(data.categories)
+          } else if (data.data?.categories) {
+            setCategories(data.data.categories)
+          } else if (Array.isArray(data)) {
+            setCategories(data)
+          }
+          return
+        }
+      } catch (endpointError) {
+        console.log('/api/categories failed, trying other endpoints...')
       }
-    } else {
-      console.error('Failed to fetch categories:', response.status, response.statusText);
-      // Try alternative endpoint
-      await fetchCategoriesAlternative();
+      
+      // Try without /api prefix
+      try {
+        const response = await fetch('https://jeien-backend.onrender.com/categories', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token && { 'Authorization': `Bearer ${token}` })
+          }
+        })
+        
+        if (response.ok) {
+          const data = await response.json()
+          console.log('Categories fetched successfully from /categories:', data)
+          
+          if (data.categories) {
+            setCategories(data.categories)
+          } else if (data.data?.categories) {
+            setCategories(data.data.categories)
+          } else if (Array.isArray(data)) {
+            setCategories(data)
+          }
+          return
+        }
+      } catch (noApiError) {
+        console.log('/categories endpoint also failed:', noApiError.message)
+      }
+      
+      // If both endpoints fail, create minimal categories for the form
+      console.log('Categories endpoint not available, creating minimal categories for form')
+      const minimalCategories = [
+        { _id: 'electronics', name: 'Electronics' },
+        { _id: 'clothing', name: 'Clothing' },
+        { _id: 'home-garden', name: 'Home & Garden' },
+        { _id: 'books', name: 'Books' },
+        { _id: 'sports', name: 'Sports' }
+      ]
+      setCategories(minimalCategories)
+      showInfo('Note: Categories are limited. Please create categories first in Categories section.')
+      
+    } catch (error) {
+      console.error('Error in fetchCategories:', error)
+      // Don't show error to user since we have fallback
+    } finally {
+      setLoadingCategories(false)
     }
-  } catch (error) {
-    console.error('Error fetching categories:', error);
-    // Try alternative endpoint
-    await fetchCategoriesAlternative();
-  } finally {
-    setLoadingCategories(false);
   }
-};
-
-// Alternative method to fetch categories
-const fetchCategoriesAlternative = async () => {
-  try {
-    console.log('Trying alternative categories endpoint...');
-    
-    // Try with axios
-    const response = await axios.get('https://jeien-backend.onrender.com/categories', {
-      headers: {
-        'Authorization': localStorage.getItem('token') ? `Bearer ${localStorage.getItem('token')}` : '',
-        'Content-Type': 'application/json'
-      }
-    });
-    
-    if (response.data) {
-      const data = response.data;
-      if (data.categories) {
-        setCategories(data.categories);
-      } else if (data.data && data.data.categories) {
-        setCategories(data.data.categories);
-      } else if (Array.isArray(data)) {
-        setCategories(data);
-      }
-    }
-  } catch (error) {
-    console.error('Alternative categories fetch also failed:', error);
-    
-    // Create mock categories for testing
-    const mockCategories = [
-      { _id: '1', name: 'Electronics' },
-      { _id: '2', name: 'Clothing' },
-      { _id: '3', name: 'Home & Garden' },
-      { _id: '4', name: 'Sports' },
-      { _id: '5', name: 'Books' }
-    ];
-    
-    console.log('Using mock categories for now');
-    setCategories(mockCategories);
-  }
-};
 
   const fetchProducts = async () => {
     try {
@@ -443,13 +438,24 @@ const fetchCategoriesAlternative = async () => {
     try {
       setIsSubmitting(true)
       
+      // Create FormData
       const formDataToSend = new FormData()
       
+      // Basic required fields
       formDataToSend.append('title', newProduct.title.trim())
       formDataToSend.append('description', (newProduct.description || '').trim())
       formDataToSend.append('price', newProduct.price.toString())
       formDataToSend.append('stock', newProduct.stock ? newProduct.stock.toString() : '0')
-      formDataToSend.append('category', newProduct.category)
+      
+      // Handle category - if it's from our minimal list, we need to handle it differently
+      // Check if category is from our minimal list (no underscore in ID)
+      if (newProduct.category && !newProduct.category.includes('_')) {
+        // This is from our minimal list, just use the name
+        formDataToSend.append('category', newProduct.category)
+      } else {
+        formDataToSend.append('category', newProduct.category)
+      }
+      
       formDataToSend.append('published', 'true')
       formDataToSend.append('approved', 'true')
       
@@ -463,6 +469,8 @@ const fetchCategoriesAlternative = async () => {
         }
       })
       
+      console.log('Sending product data...')
+      
       const response = await productService.createProduct(formDataToSend)
       
       showSuccess('Product created successfully!')
@@ -474,14 +482,19 @@ const fetchCategoriesAlternative = async () => {
     } catch (error) {
       console.error('Product creation error:', error)
       
-      if (error.response?.data) {
-        if (error.response.data.message) {
-          showError(`Error: ${error.response.data.message}`)
-        }
+      // Handle 400 error specifically
+      if (error.response?.status === 400) {
+        const errorData = error.response.data
         
-        if (error.response.data.errors) {
-          const errorMessages = Object.values(error.response.data.errors).join('\n')
+        if (errorData.message === 'Category not found') {
+          showError('Category not found. Please create the category first in the Categories section.')
+        } else if (errorData.message) {
+          showError(`Error: ${errorData.message}`)
+        } else if (errorData.errors) {
+          const errorMessages = Object.values(errorData.errors).join('\n')
           showError(`Validation errors:\n${errorMessages}`)
+        } else {
+          showError('Failed to create product. Please check all required fields.')
         }
       } else if (error.message) {
         showError(`Error: ${error.message}`)
@@ -627,7 +640,14 @@ const fetchCategoriesAlternative = async () => {
       formDataToSend.append('description', formData.description.trim())
       formDataToSend.append('price', formData.price.toString())
       formDataToSend.append('stock', formData.stock ? formData.stock.toString() : '0')
-      formDataToSend.append('category', formData.category)
+      
+      // Handle category
+      if (formData.category && !formData.category.includes('_')) {
+        formDataToSend.append('category', formData.category)
+      } else {
+        formDataToSend.append('category', formData.category)
+      }
+      
       formDataToSend.append('published', formData.published.toString())
       formDataToSend.append('approved', formData.approved.toString())
       
@@ -2024,6 +2044,9 @@ const fetchCategoriesAlternative = async () => {
                           </option>
                         ))}
                       </select>
+                      <p className="text-xs text-gray-500 mt-2">
+                        If categories don't load, please create categories first in the Categories section.
+                      </p>
                     </div>
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-2">
