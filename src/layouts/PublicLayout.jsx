@@ -129,8 +129,8 @@ const Header = ({ user, isAuthenticated, handleLogout, getDashboardPath, userRol
     }
   };
 
-  // Get user role for display
-  const getUserRole = () => {
+  // Helper function to get user role display name
+  const getUserRoleDisplay = () => {
     if (userRole === 'admin') return 'Admin';
     if (userRole === 'vendor') return 'Vendor';
     return 'User';
@@ -219,7 +219,7 @@ const Header = ({ user, isAuthenticated, handleLogout, getDashboardPath, userRol
                   size="icon" 
                   className="sm:hidden relative text-gray-600 hover:text-blue-700"
                   onClick={handleDashboardClick}
-                  title={`${getUserRole()} Dashboard`}
+                  title={`${getUserRoleDisplay()} Dashboard`}
                 >
                   <LayoutDashboard className="h-5 w-5" />
                 </Button>
@@ -399,7 +399,7 @@ const Header = ({ user, isAuthenticated, handleLogout, getDashboardPath, userRol
                         userRole === 'vendor' ? 'bg-blue-100 text-blue-800' :
                         'bg-green-100 text-green-800'
                       }`}>
-                        {getUserRole()}
+                        {getUserRoleDisplay()}
                       </span>
                       <span className="truncate">{user?.email}</span>
                     </p>

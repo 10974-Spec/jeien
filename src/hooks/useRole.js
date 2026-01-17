@@ -1,20 +1,36 @@
-import { useUser } from '../contexts/UserContext'
+// hooks/useRole.js
+import { useAuth } from './useAuth'
 
 export const useRole = () => {
-  const context = useUser() // Changed from useContext(UserContext) to useUser()
-  
-  if (!context) {
-    throw new Error('useRole must be used within an UserProvider')
+  const { user } = useAuth()
+
+  const getUserRole = () => {
+    return user?.role || 'buyer' // Default to 'buyer' if no role
   }
-  
-  // Return only the role-related functions for cleaner API
+
+  const getDashboardPath = () => {
+    const role = getUserRole()
+    
+    switch(role) {
+      case 'admin':
+        return '/admin/dashboard'
+      case 'vendor':
+        return '/vendor/dashboard'
+      case 'buyer':
+      default:
+        return '/profile' // or '/user/dashboard' if you have one
+    }
+  }
+
+  const isAdmin = () => getUserRole() === 'admin'
+  const isVendor = () => getUserRole() === 'vendor'
+  const isBuyer = () => getUserRole() === 'buyer'
+
   return {
-    getRole: context.getRole,
-    isAdmin: context.isAdmin,
-    isVendor: context.isVendor,
-    isBuyer: context.isBuyer,
-    canAccess: context.canAccess,
-    getDashboardPath: context.getDashboardPath,
-    user: context.user
+    getUserRole,
+    getDashboardPath,
+    isAdmin,
+    isVendor,
+    isBuyer
   }
 }
