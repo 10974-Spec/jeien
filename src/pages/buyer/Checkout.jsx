@@ -195,16 +195,18 @@ const Checkout = () => {
         }
       })
 
+      // Calculate amounts with ZERO TAX
       const subtotal = parseFloat(getCartTotal().toFixed(2))
-      const tax = parseFloat((subtotal * 0.16).toFixed(2))
+      const tax = 0 // ZERO TAX - NO TAX FOR BUYERS
       const shipping = 0 // FREE SHIPPING
-      const total = parseFloat((subtotal + tax + shipping).toFixed(2))
+      const total = parseFloat((subtotal + shipping).toFixed(2)) // NO TAX ADDED
 
-      console.log('Calculated amounts (FREE SHIPPING):', { 
+      console.log('Calculated amounts (ZERO TAX & FREE SHIPPING):', { 
         subtotal, 
         tax, 
         shipping, 
         total,
+        calculation: `subtotal(${subtotal}) + tax(${tax}) + shipping(${shipping}) = total(${total})`,
         cartItemsDebug: cartItems.map(item => ({
           title: item.title,
           originalPrice: item.price,
@@ -266,7 +268,9 @@ const Checkout = () => {
         orderId: order._id,
         orderAmount: amount,
         paymentMethod,
-        isTestMode
+        isTestMode,
+        taxApplied: false, // NO TAX
+        taxAmount: 0 // ZERO TAX
       })
 
       // Format phone number for M-Pesa
@@ -502,10 +506,11 @@ const Checkout = () => {
     return null
   }
 
+  // Calculate totals with ZERO TAX
   const subtotal = parseFloat(getCartTotal().toFixed(2))
-  const tax = parseFloat((subtotal * 0.16).toFixed(2))
+  const tax = 0 // ZERO TAX - NO TAX FOR BUYERS
   const shipping = 0 // FREE SHIPPING
-  const total = parseFloat((subtotal + tax + shipping).toFixed(2))
+  const total = parseFloat((subtotal + shipping).toFixed(2)) // NO TAX ADDED
 
   return (
     <div className="space-y-8">
@@ -869,8 +874,8 @@ const Checkout = () => {
                 <span className="font-medium text-green-600">FREE</span>
               </div>
               <div className="flex justify-between py-2">
-                <span className="text-gray-600">Tax (16%)</span>
-                <span className="font-medium">KES {tax.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                <span className="text-gray-600">Tax</span>
+                <span className="font-medium text-green-600">NONE</span>
               </div>
               <div className="border-t pt-4">
                 <div className="flex justify-between font-bold text-lg">
@@ -879,6 +884,9 @@ const Checkout = () => {
                 </div>
                 <div className="text-sm text-green-600 mt-1">
                   ✓ Free shipping applied
+                </div>
+                <div className="text-sm text-green-600 mt-1">
+                  ✓ No tax charged
                 </div>
               </div>
             </div>
@@ -936,6 +944,19 @@ const Checkout = () => {
               </p>
               <p className="text-xs text-blue-600 mt-1">
                 You'll receive tracking information once your order ships.
+              </p>
+            </div>
+
+            {/* No Tax Notice */}
+            <div className="p-4 bg-blue-50 rounded-lg mb-6 border border-blue-100">
+              <h4 className="font-medium text-blue-800 mb-2 flex items-center gap-2">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                No Tax Charged
+              </h4>
+              <p className="text-sm text-blue-700">
+                You are not charged any tax on your purchases.
               </p>
             </div>
 
