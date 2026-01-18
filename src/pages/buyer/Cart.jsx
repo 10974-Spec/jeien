@@ -170,16 +170,22 @@ const Cart = () => {
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Shipping</span>
-                <span className="text-green-600">Calculated at checkout</span>
+                <span className="text-green-600">FREE</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Tax</span>
-                <span>KES {(getCartTotal() * 0.16).toFixed(2)}</span>
+                <span className="text-green-600">NONE</span>
               </div>
               <div className="border-t pt-3">
                 <div className="flex justify-between font-bold text-lg">
                   <span>Total</span>
-                  <span>KES {(getCartTotal() * 1.16).toFixed(2)}</span>
+                  <span className="text-green-600">KES {getCartTotal()}</span>
+                </div>
+                <div className="text-sm text-green-600 mt-2">
+                  ✓ No tax charged on your purchase
+                </div>
+                <div className="text-sm text-green-600">
+                  ✓ Free shipping on all orders
                 </div>
               </div>
             </div>
@@ -192,20 +198,40 @@ const Cart = () => {
               {loading ? 'Processing...' : 'Proceed to Checkout'}
             </button>
 
-            <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-              <h4 className="font-medium text-blue-800 mb-2">Secure Checkout</h4>
+            {/* Free Shipping Notice */}
+            <div className="mt-6 p-4 bg-green-50 rounded-lg">
+              <h4 className="font-medium text-green-800 mb-2 flex items-center gap-2">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                Free Shipping
+              </h4>
+              <p className="text-sm text-green-700">
+                Enjoy free shipping on all orders! No minimum purchase required.
+              </p>
+            </div>
+
+            {/* No Tax Notice */}
+            <div className="mt-4 p-4 bg-blue-50 rounded-lg">
+              <h4 className="font-medium text-blue-800 mb-2 flex items-center gap-2">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                No Tax Charged
+              </h4>
               <p className="text-sm text-blue-700">
-                Your payment information is encrypted and secure. We accept M-Pesa, PayPal, and all major credit cards.
+                You are not charged any tax on your purchases. All prices shown are final.
               </p>
             </div>
 
             <div className="mt-6 space-y-3">
-              <h4 className="font-medium">We Accept</h4>
-              <div className="flex space-x-2">
-                <div className="px-3 py-1 bg-gray-100 rounded">M-Pesa</div>
-                <div className="px-3 py-1 bg-gray-100 rounded">PayPal</div>
-                <div className="px-3 py-1 bg-gray-100 rounded">Visa</div>
-                <div className="px-3 py-1 bg-gray-100 rounded">Mastercard</div>
+              <h4 className="font-medium text-gray-700">We Accept</h4>
+              <div className="flex flex-wrap gap-2">
+                <div className="px-3 py-1 bg-green-100 text-green-800 rounded text-sm font-medium">M-Pesa</div>
+                <div className="px-3 py-1 bg-blue-100 text-blue-800 rounded text-sm font-medium">PayPal</div>
+                <div className="px-3 py-1 bg-purple-100 text-purple-800 rounded text-sm font-medium">Visa</div>
+                <div className="px-3 py-1 bg-red-100 text-red-800 rounded text-sm font-medium">Mastercard</div>
+                <div className="px-3 py-1 bg-gray-100 text-gray-800 rounded text-sm font-medium">Cash on Delivery</div>
               </div>
             </div>
           </div>
