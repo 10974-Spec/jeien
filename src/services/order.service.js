@@ -59,6 +59,15 @@ const orderService = {
   searchOrders: (query) => {
     console.log('Searching orders:', query)
     return api.get(`/orders/search?q=${encodeURIComponent(query)}`)
+  },
+
+  /**
+   * Track order by order ID
+   * @param {string} orderId - Order tracking ID
+   */
+  trackOrder: (orderId) => {
+    console.log('Tracking order:', orderId)
+    return api.get(`/orders/track/${orderId}`)
   }
 }
 
