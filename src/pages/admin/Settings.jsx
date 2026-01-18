@@ -2,8 +2,8 @@ import React, { useState } from 'react'
 
 const AdminSettings = () => {
   const [settings, setSettings] = useState({
-    siteName: 'E-Shop',
-    siteEmail: 'admin@eshop.com',
+    siteName: 'jeien agencies',
+    siteEmail: 'support@jeien.com',
     sitePhone: '+254746917511',
     currency: 'KES',
     defaultCommission: 10,
