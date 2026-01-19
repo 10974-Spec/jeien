@@ -940,7 +940,7 @@ const Checkout = () => {
                 Delivery Estimate
               </h4>
               <p className="text-sm text-blue-700">
-                Orders are typically delivered within 13-30 days
+                Orders are typically delivered within 15-45 days
               </p>
               <p className="text-xs text-blue-600 mt-1">
                 You'll receive tracking information once your order ships.
