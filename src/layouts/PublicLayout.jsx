@@ -78,7 +78,7 @@ const mainCategories = [
 const navLinks = [
   { name: "Home", path: "/" },
   { name: "Shop", path: "/search" },
-  { name: "Vendors", path: "/vendors" },
+  ,
   { name: "Deals", path: "/deals" },
   { name: "About", path: "/about" },
 ];
