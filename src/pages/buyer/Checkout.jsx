@@ -35,6 +35,7 @@ const Checkout = () => {
   const [pollingInterval, setPollingInterval] = useState(null)
   const [order, setOrder] = useState(null)
   const [isTestMode, setIsTestMode] = useState(false)
+  const [showScrollTop, setShowScrollTop] = useState(false)
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -51,13 +52,32 @@ const Checkout = () => {
     initializeOrderData()
     checkTestMode()
 
-    // Cleanup polling on unmount
+    // Add scroll event listener
+    const handleScroll = () => {
+      if (window.pageYOffset > 300) {
+        setShowScrollTop(true)
+      } else {
+        setShowScrollTop(false)
+      }
+    }
+
+    window.addEventListener('scroll', handleScroll)
+
+    // Cleanup polling and scroll listener on unmount
     return () => {
       if (pollingInterval) {
         clearInterval(pollingInterval)
       }
+      window.removeEventListener('scroll', handleScroll)
     }
   }, [isAuthenticated, cartItems.length, navigate])
+
+  const scrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    })
+  }
 
   const checkTestMode = async () => {
     try {
@@ -680,7 +700,7 @@ const Checkout = () => {
 
                 <div>
                   <label className="block text-sm font-medium mb-1 text-gray-700">
-                    Street Address *
+                      Street Address *
                   </label>
                   <textarea
                     name="deliveryAddress.street"
@@ -1034,6 +1054,19 @@ const Checkout = () => {
           </div>
         </div>
       </div>
+
+      {/* Scroll to Top Button */}
+      {showScrollTop && (
+        <button
+          onClick={scrollToTop}
+          className="fixed bottom-6 right-6 z-50 p-3 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 hover:shadow-xl transition-all duration-300 transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+          aria-label="Scroll to top"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
+          </svg>
+        </button>
+      )}
     </div>
   )
 }
