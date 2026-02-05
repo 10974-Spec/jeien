@@ -13,10 +13,9 @@ import {
 import productService from '../../services/product.service'
 import categoryService from '../../services/category.service'
 import bannerService from '../../services/banner.service'
-import { useApiCall } from '../../hooks/useCachedFetch'
 
 // Button Component
-const Button = ({ children, variant = 'default', size = 'md', className = '', asChild = false, disabled = false, loading = false, ...props }) => {
+const Button = ({ children, variant = 'default', size = 'md', className = '', asChild = false, disabled = false, loading = false, href, onClick, ...props }) => {
   const baseStyles = 'inline-flex items-center justify-center rounded-full font-medium transition-all duration-200 transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:transform-none'
   const variants = {
     default: 'bg-gradient-to-r from-blue-700 to-blue-800 text-white hover:from-blue-800 hover:to-blue-900 hover:shadow-md',
@@ -31,12 +30,21 @@ const Button = ({ children, variant = 'default', size = 'md', className = '', as
     xl: 'px-8 py-4 text-lg',
   }
   
-  const Comp = asChild ? 'a' : 'button'
+  // Determine component to render
+  let Comp = 'button'
+  if (asChild) {
+    // When asChild is true, we expect the children to handle the click
+    Comp = 'span'
+  } else if (href) {
+    Comp = 'a'
+  }
   
   return (
     <Comp
       className={`${baseStyles} ${variants[variant]} ${sizes[size]} ${className} ${loading ? 'relative' : ''}`}
       disabled={disabled || loading}
+      href={href}
+      onClick={onClick}
       {...props}
     >
       {loading && (
@@ -66,7 +74,7 @@ const Badge = ({ children, variant = 'default', className = '' }) => {
   )
 }
 
-// Product Card Component
+// Product Card Component - FIXED: Removed nested <a> tags
 const ProductCard = ({ product }) => {
   const [isHovered, setIsHovered] = useState(false)
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
@@ -115,20 +123,22 @@ const ProductCard = ({ product }) => {
       whileHover={{ y: -4 }}
       transition={{ duration: 0.2 }}
     >
+      {/* Image Container with Link */}
       <Link to={`/product/${product._id}`} className="block">
-        {/* Image Container */}
         <div className="relative aspect-square rounded-2xl overflow-hidden bg-gray-100">
           {isHovered && allImages.length > 1 && (
             <>
               <button
                 onClick={prevImage}
                 className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-md hover:bg-white transition-colors z-10"
+                aria-label="Previous image"
               >
                 <ChevronLeft className="h-4 w-4" />
               </button>
               <button
                 onClick={nextImage}
                 className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-md hover:bg-white transition-colors z-10"
+                aria-label="Next image"
               >
                 <ChevronRightIcon className="h-4 w-4" />
               </button>
@@ -173,98 +183,121 @@ const ProductCard = ({ product }) => {
               className="absolute top-3 right-3 flex flex-col gap-2 z-10"
               onClick={(e) => e.preventDefault()}
             >
-              <Button size="sm" variant="secondary" className="h-8 w-8 rounded-full p-0">
+              <Button 
+                size="sm" 
+                variant="secondary" 
+                className="h-8 w-8 rounded-full p-0"
+                onClick={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  // Add to wishlist logic here
+                }}
+              >
                 <Heart className="h-4 w-4" />
               </Button>
-              <Button size="sm" variant="secondary" className="h-8 w-8 rounded-full p-0" asChild>
-                <Link to={`/product/${product._id}`}>
-                  <Eye className="h-4 w-4" />
-                </Link>
+              <Button 
+                size="sm" 
+                variant="secondary" 
+                className="h-8 w-8 rounded-full p-0"
+                onClick={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  // Quick view logic here
+                }}
+              >
+                <Eye className="h-4 w-4" />
               </Button>
             </motion.div>
           )}
         </div>
-
-        {/* Content */}
-        {!isHovered ? (
-          <div className="mt-3 px-1">
-            <h3 className="font-medium text-sm line-clamp-1">{product.title}</h3>
-            <div className="flex items-center gap-2 mt-1">
-              <span className="font-bold text-lg text-blue-700">
-                KES {product.price?.toLocaleString()}
-              </span>
-              {product.comparePrice && product.comparePrice > product.price && (
-                <span className="text-sm text-gray-500 line-through">
-                  KES {product.comparePrice.toLocaleString()}
-                </span>
-              )}
-            </div>
-          </div>
-        ) : (
-          <motion.div
-            initial={{ opacity: 0, y: 10, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            className="absolute left-0 right-0 -bottom-2 z-20 mx-1 p-4 rounded-2xl bg-white/80 backdrop-blur-xl border border-white/20 shadow-xl"
-          >
-            {product.vendor && (
-              <Link 
-                to={`/vendor/${product.vendor?._id}`} 
-                className="text-xs text-gray-500 hover:text-blue-700 transition-colors"
-                onClick={(e) => e.stopPropagation()}
-              >
-                {product.vendor?.storeName || product.vendor?.name || 'Unknown Vendor'}
-              </Link>
-            )}
-            
-            <h3 className="font-medium text-sm mt-1 line-clamp-2">{product.title}</h3>
-
-            <div className="flex items-center gap-1 mt-2">
-              <div className="flex items-center">
-                {[...Array(5)].map((_, i) => (
-                  <Star
-                    key={i}
-                    className={`h-3 w-3 ${
-                      i < Math.floor(product.averageRating || 0)
-                        ? 'text-yellow-400 fill-yellow-400'
-                        : 'text-gray-300'
-                    }`}
-                  />
-                ))}
-              </div>
-              <span className="text-xs text-gray-500">({product.reviewCount || 0})</span>
-            </div>
-
-            <div className="flex items-center gap-2 mt-2">
-              <span className="font-bold text-lg text-blue-700">
-                KES {product.price?.toLocaleString()}
-              </span>
-              {product.comparePrice && product.comparePrice > product.price && (
-                <span className="text-sm text-gray-500 line-through">
-                  KES {product.comparePrice.toLocaleString()}
-                </span>
-              )}
-            </div>
-
-            <div className="mt-2">
-              <span className="text-xs text-green-600 flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-green-600" />
-                {product.stock > 0 ? 'In Stock' : 'Out of Stock'}
-              </span>
-            </div>
-
-            <Button 
-              className="w-full mt-3 gap-2" 
-              size="sm"
-              onClick={handleAddToCart}
-              disabled={product.stock === 0}
-              loading={addingToCart}
-            >
-              <ShoppingCart className="h-4 w-4" />
-              {product.stock > 0 ? 'Add to Cart' : 'Out of Stock'}
-            </Button>
-          </motion.div>
-        )}
       </Link>
+
+      {/* Content - FIXED: Don't wrap in Link */}
+      {!isHovered ? (
+        <div className="mt-3 px-1">
+          <Link to={`/product/${product._id}`} className="block">
+            <h3 className="font-medium text-sm line-clamp-1 hover:text-blue-700 transition-colors">
+              {product.title}
+            </h3>
+          </Link>
+          <div className="flex items-center gap-2 mt-1">
+            <span className="font-bold text-lg text-blue-700">
+              KES {product.price?.toLocaleString()}
+            </span>
+            {product.comparePrice && product.comparePrice > product.price && (
+              <span className="text-sm text-gray-500 line-through">
+                KES {product.comparePrice.toLocaleString()}
+              </span>
+            )}
+          </div>
+        </div>
+      ) : (
+        <motion.div
+          initial={{ opacity: 0, y: 10, scale: 0.95 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          className="absolute left-0 right-0 -bottom-2 z-20 mx-1 p-4 rounded-2xl bg-white/80 backdrop-blur-xl border border-white/20 shadow-xl"
+        >
+          {product.vendor && (
+            <Link 
+              to={`/vendor/${product.vendor?._id}`} 
+              className="text-xs text-gray-500 hover:text-blue-700 transition-colors block"
+            >
+              {product.vendor?.storeName || product.vendor?.name || 'Unknown Vendor'}
+            </Link>
+          )}
+          
+          <Link to={`/product/${product._id}`}>
+            <h3 className="font-medium text-sm mt-1 line-clamp-2 hover:text-blue-700 transition-colors">
+              {product.title}
+            </h3>
+          </Link>
+
+          <div className="flex items-center gap-1 mt-2">
+            <div className="flex items-center">
+              {[...Array(5)].map((_, i) => (
+                <Star
+                  key={i}
+                  className={`h-3 w-3 ${
+                    i < Math.floor(product.averageRating || 0)
+                      ? 'text-yellow-400 fill-yellow-400'
+                      : 'text-gray-300'
+                  }`}
+                />
+              ))}
+            </div>
+            <span className="text-xs text-gray-500">({product.reviewCount || 0})</span>
+          </div>
+
+          <div className="flex items-center gap-2 mt-2">
+            <span className="font-bold text-lg text-blue-700">
+              KES {product.price?.toLocaleString()}
+            </span>
+            {product.comparePrice && product.comparePrice > product.price && (
+              <span className="text-sm text-gray-500 line-through">
+                KES {product.comparePrice.toLocaleString()}
+              </span>
+            )}
+          </div>
+
+          <div className="mt-2">
+            <span className="text-xs text-green-600 flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-green-600" />
+              {product.stock > 0 ? 'In Stock' : 'Out of Stock'}
+            </span>
+          </div>
+
+          <Button 
+            className="w-full mt-3 gap-2" 
+            size="sm"
+            onClick={handleAddToCart}
+            disabled={product.stock === 0}
+            loading={addingToCart}
+          >
+            <ShoppingCart className="h-4 w-4" />
+            {product.stock > 0 ? 'Add to Cart' : 'Out of Stock'}
+          </Button>
+        </motion.div>
+      )}
     </motion.div>
   )
 }
@@ -515,7 +548,7 @@ const CategorySection = ({ categories, loading }) => {
   )
 }
 
-// Deals Section Component
+// Deals Section Component - FIXED: Removed nested <a> tags
 const DealsSection = ({ deals, loading }) => {
   const [timeLeft, setTimeLeft] = useState({ hours: 12, minutes: 0, seconds: 0 })
 
@@ -599,10 +632,8 @@ const DealsSection = ({ deals, loading }) => {
               <p className="text-gray-600">Hurry up! Limited time offers</p>
             </div>
           </div>
-          <Button variant="ghost" className="gap-1" asChild>
-            <Link to="/search?deals=true">
-              All Deals <ArrowRight className="h-4 w-4" />
-            </Link>
+          <Button variant="ghost" className="gap-1" href="/search?deals=true">
+            All Deals <ArrowRight className="h-4 w-4" />
           </Button>
         </div>
 
@@ -616,19 +647,21 @@ const DealsSection = ({ deals, loading }) => {
               transition={{ delay: index * 0.1 }}
               className="group bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-lg transition-all duration-300"
             >
-              <Link to={`/product/${deal._id}`} className="relative aspect-square bg-gray-100 overflow-hidden block">
-                <img
-                  src={deal.images?.[0] || 'https://images.unsplash.com/photo-1619566636858-adf3ef46400b?w=400&h=400&fit=crop'}
-                  alt={deal.title}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  onError={(e) => {
-                    e.target.onerror = null
-                    e.target.src = 'https://images.unsplash.com/photo-1619566636858-adf3ef46400b?w=400&h=400&fit=crop'
-                  }}
-                />
-                <Badge className="absolute top-3 left-3 bg-red-500 text-white text-sm font-bold">
-                  -{Math.round((1 - (deal.price / (deal.comparePrice || deal.price * 1.3))) * 100)}%
-                </Badge>
+              <Link to={`/product/${deal._id}`} className="block">
+                <div className="relative aspect-square bg-gray-100 overflow-hidden">
+                  <img
+                    src={deal.images?.[0] || 'https://images.unsplash.com/photo-1619566636858-adf3ef46400b?w=400&h=400&fit=crop'}
+                    alt={deal.title}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    onError={(e) => {
+                      e.target.onerror = null
+                      e.target.src = 'https://images.unsplash.com/photo-1619566636858-adf3ef46400b?w=400&h=400&fit=crop'
+                    }}
+                  />
+                  <Badge className="absolute top-3 left-3 bg-red-500 text-white text-sm font-bold">
+                    -{Math.round((1 - (deal.price / (deal.comparePrice || deal.price * 1.3))) * 100)}%
+                  </Badge>
+                </div>
               </Link>
 
               <div className="p-4 space-y-3">
@@ -654,8 +687,8 @@ const DealsSection = ({ deals, loading }) => {
                   <CountdownTimer />
                 </div>
 
-                <Button className="w-full" size="sm" asChild>
-                  <Link to={`/product/${deal._id}`}>Grab Deal</Link>
+                <Button className="w-full" size="sm" href={`/product/${deal._id}`}>
+                  Grab Deal
                 </Button>
               </div>
             </motion.div>
@@ -714,10 +747,8 @@ const FeaturedProducts = ({ products, loading }) => {
               <p className="text-gray-600">Handpicked items just for you</p>
             </div>
           </div>
-          <Button variant="ghost" className="gap-1" asChild>
-            <Link to="/search?featured=true">
-              View All <ChevronRight className="h-4 w-4" />
-            </Link>
+          <Button variant="ghost" className="gap-1" href="/search?featured=true">
+            View All <ChevronRight className="h-4 w-4" />
           </Button>
         </div>
 
@@ -739,7 +770,7 @@ const FeaturedProducts = ({ products, loading }) => {
   )
 }
 
-// Promo Banner Component - UPDATED TO HANDLE POSITIONS
+// Promo Banner Component
 const PromoBanner = ({ banners, loading, position = null }) => {
   if (loading) {
     return (
@@ -802,10 +833,8 @@ const PromoBanner = ({ banners, loading, position = null }) => {
                   <p className="text-white/80 mb-4">
                     {banner.description}
                   </p>
-                  <Button variant="secondary" size="sm" asChild>
-                    <Link to={banner.link}>
-                      Shop Now <ArrowRight className="h-4 w-4 ml-1" />
-                    </Link>
+                  <Button variant="secondary" size="sm" href={banner.link}>
+                    Shop Now <ArrowRight className="h-4 w-4 ml-1" />
                   </Button>
                 </div>
               </motion.div>
@@ -838,10 +867,8 @@ const PromoBanner = ({ banners, loading, position = null }) => {
                 <p className="text-white/80 mb-4">
                   {banner.description}
                 </p>
-                <Button variant="secondary" size="sm" asChild>
-                  <Link to={banner.link || '/search'}>
-                    Shop Now <ArrowRight className="h-4 w-4 ml-1" />
-                  </Link>
+                <Button variant="secondary" size="sm" href={banner.link || '/search'}>
+                  Shop Now <ArrowRight className="h-4 w-4 ml-1" />
                 </Button>
               </div>
             </motion.div>
@@ -938,10 +965,8 @@ const ProductsDisplay = ({ title, icon: Icon, description, products, seeMoreLink
             </div>
           </div>
           {seeMoreLink && (
-            <Button variant="ghost" className="gap-1" asChild>
-              <Link to={seeMoreLink}>
-                View All <ChevronRight className="h-4 w-4" />
-              </Link>
+            <Button variant="ghost" className="gap-1" href={seeMoreLink}>
+              View All <ChevronRight className="h-4 w-4" />
             </Button>
           )}
         </div>
@@ -964,7 +989,7 @@ const ProductsDisplay = ({ title, icon: Icon, description, products, seeMoreLink
   )
 }
 
-// Main Home Component - UPDATED WITH BANNER POSITIONS AND MOBILE NAV
+// Main Home Component
 const BuyerHome = () => {
   const [featuredProducts, setFeaturedProducts] = useState([])
   const [newArrivals, setNewArrivals] = useState([])
@@ -1007,9 +1032,9 @@ const BuyerHome = () => {
             
             console.log('Banners loaded:', {
               total: allBanners.length,
-              homeTop: homeTopBanners.length,
-              homeMiddle: homeMiddleBanners.length,
-              homeBottom: homeBottomBanners.length
+              homeTop: allBanners.filter(b => b.position === 'HOME_TOP').length,
+              homeMiddle: allBanners.filter(b => b.position === 'HOME_MIDDLE').length,
+              homeBottom: allBanners.filter(b => b.position === 'HOME_BOTTOM').length
             })
             
             return response
@@ -1137,7 +1162,7 @@ const BuyerHome = () => {
     comparePrice: product.comparePrice || Math.round(product.price * (1 + Math.random() * 0.5))
   }))
 
-  // Mobile Navigation Component with Login/Signup
+  // Mobile Navigation Component
   const MobileNavigation = () => (
     <>
       {/* Mobile Menu Button */}
@@ -1234,7 +1259,7 @@ const BuyerHome = () => {
               <div className="border-t"></div>
             </div>
 
-            {/* Auth Section - Added Login and Signup */}
+            {/* Auth Section */}
             <div className="p-4 space-y-1">
               <div className="px-3 py-2">
                 <span className="text-xs font-medium text-gray-500 uppercase">Account</span>
@@ -1298,22 +1323,6 @@ const BuyerHome = () => {
                 Contact Us
               </Link>
             </div>
-
-            {/* Sign Out Button (if logged in) */}
-            {/* Uncomment when you have auth state
-            <div className="p-4 mt-auto border-t">
-              <button
-                className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 transition-colors text-red-600 w-full"
-                onClick={() => {
-                  // Handle sign out
-                  setIsMobileMenuOpen(false)
-                }}
-              >
-                <LogOut className="h-5 w-5" />
-                Sign Out
-              </button>
-            </div>
-            */}
           </motion.div>
         </div>
       )}
@@ -1456,11 +1465,9 @@ const BuyerHome = () => {
                       transition={{ delay: 0.5 }}
                       className="flex items-center gap-3"
                     >
-                      <Button size="lg" className="gap-2 shadow-lg" asChild>
-                        <Link to={homeTopBanners[0].link || '/search'}>
-                          Shop Now
-                          <ArrowRight className="h-4 w-4" />
-                        </Link>
+                      <Button size="lg" className="gap-2 shadow-lg" href={homeTopBanners[0].link || '/search'}>
+                        Shop Now
+                        <ArrowRight className="h-4 w-4" />
                       </Button>
                     </motion.div>
                   </div>
@@ -1502,14 +1509,12 @@ const BuyerHome = () => {
                     transition={{ delay: 0.5 }}
                     className="flex items-center gap-3"
                   >
-                    <Button size="lg" className="gap-2 shadow-lg" asChild>
-                      <Link to="/search">
-                        Shop Now
-                        <ArrowRight className="h-4 w-4" />
-                      </Link>
+                    <Button size="lg" className="gap-2 shadow-lg" href="/search">
+                      Shop Now
+                      <ArrowRight className="h-4 w-4" />
                     </Button>
-                    <Button size="lg" variant="outline" className="bg-white/50 backdrop-blur-sm" asChild>
-                      <Link to="/search?deals=true">View Deals</Link>
+                    <Button size="lg" variant="outline" className="bg-white/50 backdrop-blur-sm" href="/search?deals=true">
+                      View Deals
                     </Button>
                   </motion.div>
                 </div>
@@ -1528,10 +1533,8 @@ const BuyerHome = () => {
                   <span className="text-xs font-semibold text-blue-700 uppercase tracking-wider">New Arrivals</span>
                   <h3 className="text-xl font-bold mt-2 mb-3 text-gray-900">Fresh Products</h3>
                   <p className="text-sm text-gray-600 mb-4">New items added daily</p>
-                  <Button variant="secondary" size="sm" className="gap-1" asChild>
-                    <Link to="/search?sort=newest">
-                      Explore <ArrowRight className="h-3 w-3" />
-                    </Link>
+                  <Button variant="secondary" size="sm" className="gap-1" href="/search?sort=newest">
+                    Explore <ArrowRight className="h-3 w-3" />
                   </Button>
                 </div>
               </motion.div>
@@ -1548,10 +1551,8 @@ const BuyerHome = () => {
                     20% OFF
                   </h3>
                   <p className="text-sm opacity-90 mb-4">On selected categories</p>
-                  <Button variant="secondary" size="sm" className="gap-1 bg-white text-gray-900 hover:bg-white/90" asChild>
-                    <Link to="/search?deals=flash">
-                      Shop Now <ArrowRight className="h-3 w-3" />
-                    </Link>
+                  <Button variant="secondary" size="sm" className="gap-1 bg-white text-gray-900 hover:bg-white/90" href="/search?deals=flash">
+                    Shop Now <ArrowRight className="h-3 w-3" />
                   </Button>
                 </div>
               </motion.div>
@@ -1629,13 +1630,11 @@ const BuyerHome = () => {
                 Join thousands of sellers and reach millions of customers. Start your business with zero upfront costs.
               </p>
               <div className="flex flex-wrap justify-center gap-4">
-                <Button size="lg" className="bg-blue-700 hover:bg-blue-800" asChild>
-                  <Link to="/register?vendor=true">
-                    Start Selling <ArrowRight className="h-4 w-4 ml-1" />
-                  </Link>
+                <Button size="lg" className="bg-blue-700 hover:bg-blue-800" href="/register?vendor=true">
+                  Start Selling <ArrowRight className="h-4 w-4 ml-1" />
                 </Button>
-                <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10" asChild>
-                  <Link to="/vendor-info">Learn More</Link>
+                <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10" href="/vendor-info">
+                  Learn More
                 </Button>
               </div>
             </div>
