@@ -11,7 +11,7 @@ const Checkout = () => {
   const navigate = useNavigate()
   const { user, isAuthenticated } = useAuth()
   const { cartItems, getCartTotal, clearCart } = useCart()
-  
+
   const [loading, setLoading] = useState(false)
   const [processingPayment, setProcessingPayment] = useState(false)
   const [orderId, setOrderId] = useState(null)
@@ -173,7 +173,7 @@ const Checkout = () => {
 
   const validateForm = () => {
     const { fullName, phone, country, city, street } = orderData.deliveryAddress
-    
+
     if (!fullName || !phone || !country || !city || !street) {
       toast.error('Please fill in all required address fields')
       return false
@@ -197,13 +197,13 @@ const Checkout = () => {
       // Prepare order items exactly as the backend expects
       const items = cartItems.map(item => {
         let price = parseFloat(item.price);
-        
+
         // If price seems too high (like 20000 instead of 200), divide by 100
         if (price > 10000) {
           console.log('Adjusting price from', price, 'to', price / 100);
           price = price / 100;
         }
-        
+
         return {
           productId: item._id,
           title: item.title,
@@ -221,10 +221,10 @@ const Checkout = () => {
       const shipping = 0 // FREE SHIPPING
       const total = parseFloat((subtotal + shipping).toFixed(2)) // NO TAX ADDED
 
-      console.log('Calculated amounts (ZERO TAX & FREE SHIPPING):', { 
-        subtotal, 
-        tax, 
-        shipping, 
+      console.log('Calculated amounts (ZERO TAX & FREE SHIPPING):', {
+        subtotal,
+        tax,
+        shipping,
         total,
         calculation: `subtotal(${subtotal}) + tax(${tax}) + shipping(${shipping}) = total(${total})`,
         cartItemsDebug: cartItems.map(item => ({
@@ -258,24 +258,24 @@ const Checkout = () => {
 
       const response = await orderService.createOrder(orderPayload)
       const order = response.data.order
-      
+
       console.log('Order created successfully:', order)
-      
+
       setOrderId(order._id)
       setOrder(order)
       return order
     } catch (error) {
       console.error('Failed to create order:', error)
-      const errorMessage = error.response?.data?.message || 
-                         error.response?.data?.error || 
-                         error.message || 
-                         'Failed to create order'
+      const errorMessage = error.response?.data?.message ||
+        error.response?.data?.error ||
+        error.message ||
+        'Failed to create order'
       toast.error(errorMessage)
-      
+
       if (error.response?.data?.errors) {
         console.error('Validation errors:', error.response.data.errors)
       }
-      
+
       throw error
     }
   }
@@ -283,7 +283,7 @@ const Checkout = () => {
   const initiatePayment = async (order) => {
     try {
       const amount = parseFloat(order.totalAmount)
-      
+
       console.log('Initiating payment for order:', {
         orderId: order._id,
         orderAmount: amount,
@@ -295,13 +295,15 @@ const Checkout = () => {
 
       // Format phone number for M-Pesa
       let formattedPhone = mpesaPhone.replace(/\D/g, '')
+
+      // Ensure it starts with 254 if it's a local number
       if (formattedPhone.startsWith('0')) {
         formattedPhone = `254${formattedPhone.substring(1)}`
-      } else if (formattedPhone.startsWith('254')) {
-        // Already correct format
-      } else if (formattedPhone.startsWith('7')) {
+      } else if (formattedPhone.startsWith('7') || formattedPhone.startsWith('1')) {
         formattedPhone = `254${formattedPhone}`
       }
+      // If it already starts with 254, leave it as is.
+
 
       console.log('Formatted phone number:', formattedPhone)
 
@@ -344,7 +346,7 @@ const Checkout = () => {
         status: error.response?.status,
         config: error.config
       })
-      
+
       throw new Error(error.response?.data?.message || error.message || 'Payment failed')
     }
   }
@@ -352,9 +354,9 @@ const Checkout = () => {
   const processMpesaPayment = async (order) => {
     try {
       setProcessingPayment(true)
-      
+
       const result = await initiatePayment(order)
-      
+
       if (result.success) {
         if (isTestMode) {
           toast.success('Test payment initiated! Simulating M-Pesa payment...')
@@ -382,21 +384,21 @@ const Checkout = () => {
 
     let attempts = 0
     const maxAttempts = isTestMode ? 2 : 30 // Fewer attempts for test mode
-    
+
     const interval = setInterval(async () => {
       attempts++
       console.log(`Polling payment status attempt ${attempts}/${maxAttempts}`)
-      
+
       try {
         const statusResponse = await paymentService.getPaymentStatus(orderId)
         console.log('Payment status response:', statusResponse.data)
-        
+
         if (statusResponse.data.paymentStatus === 'COMPLETED') {
           clearInterval(interval)
           setPollingInterval(null)
           setProcessingPayment(false)
           toast.success('Payment completed successfully!')
-          
+
           clearCart()
           navigate('/order-success', { state: { orderId: orderId } })
         } else if (statusResponse.data.paymentStatus === 'FAILED') {
@@ -408,7 +410,7 @@ const Checkout = () => {
           // If in test mode and we've polled enough, manually complete
           if (isTestMode && attempts >= maxAttempts) {
             console.log('Test mode: Manually completing payment...')
-            
+
             try {
               // Try to manually complete the test payment
               const completeResponse = await paymentService.testMpesaPayment({
@@ -416,7 +418,7 @@ const Checkout = () => {
                 phone: mpesaPhone,
                 amount: Math.round(order?.totalAmount || 0)
               })
-              
+
               if (completeResponse.data.success) {
                 clearInterval(interval)
                 setPollingInterval(null)
@@ -429,13 +431,13 @@ const Checkout = () => {
               console.error('Error completing test payment:', error)
             }
           }
-          
+
           console.log('Payment still processing...')
         } else if (attempts >= maxAttempts) {
           clearInterval(interval)
           setPollingInterval(null)
           setProcessingPayment(false)
-          
+
           if (isTestMode) {
             toast.info('Test payment timed out. Please check your order status.')
           } else {
@@ -444,7 +446,7 @@ const Checkout = () => {
         }
       } catch (error) {
         console.error('Payment status check error:', error)
-        
+
         if (attempts >= maxAttempts) {
           clearInterval(interval)
           setPollingInterval(null)
@@ -460,7 +462,7 @@ const Checkout = () => {
   const handleOtherPayment = async (order) => {
     try {
       const result = await initiatePayment(order)
-      
+
       if (result.success) {
         if (paymentMethod === 'PAYPAL') {
           if (result.redirectUrl) {
@@ -559,7 +561,7 @@ const Checkout = () => {
           {/* Delivery Address */}
           <div className="bg-white rounded-lg shadow p-6">
             <h2 className="text-xl font-bold mb-4">Delivery Address</h2>
-            
+
             {addresses.length > 0 && (
               <div className="mb-6">
                 <h3 className="font-medium mb-3">Select Address</h3>
@@ -567,11 +569,10 @@ const Checkout = () => {
                   {addresses.map((address) => (
                     <div
                       key={address._id}
-                      className={`p-4 border rounded-lg cursor-pointer transition-all ${
-                        selectedAddress === address._id 
-                          ? 'border-blue-500 bg-blue-50 transform scale-[1.02]' 
+                      className={`p-4 border rounded-lg cursor-pointer transition-all ${selectedAddress === address._id
+                          ? 'border-blue-500 bg-blue-50 transform scale-[1.02]'
                           : 'border-gray-200 hover:border-gray-300'
-                      }`}
+                        }`}
                       onClick={() => handleAddressChange(address._id)}
                     >
                       <div className="flex items-start justify-between">
@@ -700,7 +701,7 @@ const Checkout = () => {
 
                 <div>
                   <label className="block text-sm font-medium mb-1 text-gray-700">
-                      Street Address *
+                    Street Address *
                   </label>
                   <textarea
                     name="deliveryAddress.street"
@@ -731,7 +732,7 @@ const Checkout = () => {
           {/* Payment Method */}
           <div className="bg-white rounded-lg shadow p-6">
             <h2 className="text-xl font-bold mb-4 text-gray-800">Payment Method</h2>
-            
+
             {isTestMode && (
               <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
                 <p className="text-sm text-yellow-700">
@@ -739,14 +740,12 @@ const Checkout = () => {
                 </p>
               </div>
             )}
-            
+
             <div className="space-y-3">
-              <div className={`flex items-center space-x-3 p-4 border rounded-lg cursor-pointer transition-all ${
-                paymentMethod === 'MPESA' ? 'border-green-500 bg-green-50' : 'border-gray-200 hover:border-gray-300'
-              }`} onClick={() => setPaymentMethod('MPESA')}>
-                <div className={`flex items-center justify-center w-6 h-6 rounded-full border ${
-                  paymentMethod === 'MPESA' ? 'border-green-500 bg-green-500' : 'border-gray-300'
-                }`}>
+              <div className={`flex items-center space-x-3 p-4 border rounded-lg cursor-pointer transition-all ${paymentMethod === 'MPESA' ? 'border-green-500 bg-green-50' : 'border-gray-200 hover:border-gray-300'
+                }`} onClick={() => setPaymentMethod('MPESA')}>
+                <div className={`flex items-center justify-center w-6 h-6 rounded-full border ${paymentMethod === 'MPESA' ? 'border-green-500 bg-green-500' : 'border-gray-300'
+                  }`}>
                   {paymentMethod === 'MPESA' && (
                     <div className="w-3 h-3 bg-white rounded-full"></div>
                   )}
@@ -801,12 +800,10 @@ const Checkout = () => {
                 </div>
               )}
 
-              <div className={`flex items-center space-x-3 p-4 border rounded-lg cursor-pointer transition-all ${
-                paymentMethod === 'PAYPAL' ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'
-              }`} onClick={() => setPaymentMethod('PAYPAL')}>
-                <div className={`flex items-center justify-center w-6 h-6 rounded-full border ${
-                  paymentMethod === 'PAYPAL' ? 'border-blue-500 bg-blue-500' : 'border-gray-300'
-                }`}>
+              <div className={`flex items-center space-x-3 p-4 border rounded-lg cursor-pointer transition-all ${paymentMethod === 'PAYPAL' ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'
+                }`} onClick={() => setPaymentMethod('PAYPAL')}>
+                <div className={`flex items-center justify-center w-6 h-6 rounded-full border ${paymentMethod === 'PAYPAL' ? 'border-blue-500 bg-blue-500' : 'border-gray-300'
+                  }`}>
                   {paymentMethod === 'PAYPAL' && (
                     <div className="w-3 h-3 bg-white rounded-full"></div>
                   )}
@@ -819,12 +816,10 @@ const Checkout = () => {
                 </div>
               </div>
 
-              <div className={`flex items-center space-x-3 p-4 border rounded-lg cursor-pointer transition-all ${
-                paymentMethod === 'CARD' ? 'border-purple-500 bg-purple-50' : 'border-gray-200 hover:border-gray-300'
-              }`} onClick={() => setPaymentMethod('CARD')}>
-                <div className={`flex items-center justify-center w-6 h-6 rounded-full border ${
-                  paymentMethod === 'CARD' ? 'border-purple-500 bg-purple-500' : 'border-gray-300'
-                }`}>
+              <div className={`flex items-center space-x-3 p-4 border rounded-lg cursor-pointer transition-all ${paymentMethod === 'CARD' ? 'border-purple-500 bg-purple-50' : 'border-gray-200 hover:border-gray-300'
+                }`} onClick={() => setPaymentMethod('CARD')}>
+                <div className={`flex items-center justify-center w-6 h-6 rounded-full border ${paymentMethod === 'CARD' ? 'border-purple-500 bg-purple-500' : 'border-gray-300'
+                  }`}>
                   {paymentMethod === 'CARD' && (
                     <div className="w-3 h-3 bg-white rounded-full"></div>
                   )}
@@ -837,12 +832,10 @@ const Checkout = () => {
                 </div>
               </div>
 
-              <div className={`flex items-center space-x-3 p-4 border rounded-lg cursor-pointer transition-all ${
-                paymentMethod === 'CASH_ON_DELIVERY' ? 'border-orange-500 bg-orange-50' : 'border-gray-200 hover:border-gray-300'
-              }`} onClick={() => setPaymentMethod('CASH_ON_DELIVERY')}>
-                <div className={`flex items-center justify-center w-6 h-6 rounded-full border ${
-                  paymentMethod === 'CASH_ON_DELIVERY' ? 'border-orange-500 bg-orange-500' : 'border-gray-300'
-                }`}>
+              <div className={`flex items-center space-x-3 p-4 border rounded-lg cursor-pointer transition-all ${paymentMethod === 'CASH_ON_DELIVERY' ? 'border-orange-500 bg-orange-50' : 'border-gray-200 hover:border-gray-300'
+                }`} onClick={() => setPaymentMethod('CASH_ON_DELIVERY')}>
+                <div className={`flex items-center justify-center w-6 h-6 rounded-full border ${paymentMethod === 'CASH_ON_DELIVERY' ? 'border-orange-500 bg-orange-500' : 'border-gray-300'
+                  }`}>
                   {paymentMethod === 'CASH_ON_DELIVERY' && (
                     <div className="w-3 h-3 bg-white rounded-full"></div>
                   )}
@@ -983,13 +976,12 @@ const Checkout = () => {
             <button
               onClick={handlePlaceOrder}
               disabled={loading || processingPayment}
-              className={`w-full py-4 rounded-lg font-bold text-lg transition-all duration-300 ${
-                processingPayment 
-                  ? 'bg-yellow-500 hover:bg-yellow-600 text-white' 
-                  : loading 
+              className={`w-full py-4 rounded-lg font-bold text-lg transition-all duration-300 ${processingPayment
+                  ? 'bg-yellow-500 hover:bg-yellow-600 text-white'
+                  : loading
                     ? 'bg-gray-400 text-white cursor-not-allowed'
                     : 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-lg hover:shadow-xl'
-              }`}
+                }`}
             >
               {processingPayment ? (
                 <div className="flex items-center justify-center gap-2">
@@ -1036,7 +1028,7 @@ const Checkout = () => {
             )}
 
             <p className="text-xs text-gray-500 mt-4 text-center">
-              By placing your order, you agree to our 
+              By placing your order, you agree to our
               <a href="/terms" className="text-blue-600 hover:text-blue-800 mx-1">Terms of Service</a>
               and
               <a href="/privacy" className="text-blue-600 hover:text-blue-800 mx-1">Privacy Policy</a>

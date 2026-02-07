@@ -7,7 +7,7 @@ const Login = () => {
   const navigate = useNavigate()
   const location = useLocation()
   const { login, googleLogin } = useAuth()
-  
+
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -15,7 +15,7 @@ const Login = () => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  const from = location.state?.from?.pathname || '/'
+  const from = location.state?.from?.pathname || location.state?.from || '/'
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -240,7 +240,7 @@ const Login = () => {
                 Premium Marketplace
               </p>
             </div>
-            
+
             <div className="mt-12">
               <div className="space-y-4">
                 <div className="flex items-center justify-center gap-3 text-gray-600">
