@@ -10,7 +10,7 @@ const ProductDetails = () => {
   const navigate = useNavigate()
   const { user, isAuthenticated } = useAuth()
   const { addToCart, isInCart, getItemCount } = useCart()
-  
+
   const [product, setProduct] = useState(null)
   const [reviews, setReviews] = useState([])
   const [similarProducts, setSimilarProducts] = useState([])
@@ -18,6 +18,7 @@ const ProductDetails = () => {
   const [quantity, setQuantity] = useState(1)
   const [selectedImage, setSelectedImage] = useState(0)
   const [activeTab, setActiveTab] = useState('description')
+  const [pricingType, setPricingType] = useState('retail') // 'retail' or 'wholesale'
   const [reviewData, setReviewData] = useState({
     rating: 5,
     title: '',
@@ -35,18 +36,18 @@ const ProductDetails = () => {
       setLoading(true)
       const response = await productService.getProductById(id)
       const productData = response.data.product
-      
+
       if (!productData) {
         throw new Error('Product not found')
       }
-      
+
       setProduct(productData)
       setSelectedImage(0)
-      
+
       // Fetch reviews
       const reviewsRes = await reviewService.getProductReviews(productData._id)
       setReviews(reviewsRes.data.reviews || [])
-      
+
       // Fetch similar products
       const similarRes = await productService.getAllProducts({
         category: productData.category?._id,
@@ -54,7 +55,7 @@ const ProductDetails = () => {
         exclude: productData._id
       })
       setSimilarProducts(similarRes.data.products || [])
-      
+
     } catch (error) {
       console.error('Failed to fetch product details:', error)
       setProduct(null)
@@ -65,20 +66,22 @@ const ProductDetails = () => {
 
   const handleAddToCart = () => {
     if (!product || product.stock === 0) return
-    
+
     addToCart({
       ...product,
-      quantity: quantity
+      quantity: quantity,
+      selectedPricingType: pricingType // Add selected pricing type
     })
     setQuantity(1)
   }
 
   const handleBuyNow = () => {
     if (!product || product.stock === 0) return
-    
+
     addToCart({
       ...product,
-      quantity: quantity
+      quantity: quantity,
+      selectedPricingType: pricingType // Add selected pricing type
     })
     navigate('/cart')
   }
@@ -97,7 +100,7 @@ const ProductDetails = () => {
         title: reviewData.title,
         comment: reviewData.comment,
       })
-      
+
       setReviewData({ rating: 5, title: '', comment: '' })
       fetchProductDetails()
       alert('Review submitted successfully!')
@@ -208,18 +211,17 @@ const ProductDetails = () => {
                 </div>
               )}
             </div>
-            
+
             {product.images && product.images.length > 1 && (
               <div className="flex space-x-2 overflow-x-auto pb-2">
                 {product.images.map((img, index) => (
                   <button
                     key={index}
                     onClick={() => setSelectedImage(index)}
-                    className={`flex-shrink-0 w-20 h-20 rounded overflow-hidden border-2 transition-all ${
-                      selectedImage === index 
-                        ? 'border-blue-500 ring-2 ring-blue-200' 
+                    className={`flex-shrink-0 w-20 h-20 rounded overflow-hidden border-2 transition-all ${selectedImage === index
+                        ? 'border-blue-500 ring-2 ring-blue-200'
                         : 'border-transparent hover:border-gray-300'
-                    }`}
+                      }`}
                   >
                     <img
                       src={img}
@@ -247,7 +249,7 @@ const ProductDetails = () => {
                   </span>
                 )}
               </div>
-              
+
               <div className="flex items-center space-x-4 mb-4">
                 <span className="text-3xl font-bold text-blue-600">
                   KES {product.price?.toLocaleString()}
@@ -263,17 +265,16 @@ const ProductDetails = () => {
                   </>
                 )}
               </div>
-              
+
               <div className="flex items-center space-x-2 mb-6">
                 <div className="flex items-center">
                   {[...Array(5)].map((_, i) => (
                     <svg
                       key={i}
-                      className={`w-5 h-5 ${
-                        i < Math.floor(product.averageRating || 0)
+                      className={`w-5 h-5 ${i < Math.floor(product.averageRating || 0)
                           ? 'text-yellow-400'
                           : 'text-gray-300'
-                      }`}
+                        }`}
                       fill="currentColor"
                       viewBox="0 0 20 20"
                     >
@@ -309,7 +310,7 @@ const ProductDetails = () => {
                   </Link>
                 </div>
               )}
-              
+
               {product.category && (
                 <div className="flex items-center">
                   <span className="text-gray-600 w-32">Category:</span>
@@ -321,13 +322,12 @@ const ProductDetails = () => {
                   </Link>
                 </div>
               )}
-              
+
               <div className="flex items-center">
                 <span className="text-gray-600 w-32">Stock Status:</span>
-                <span className={`font-medium ${
-                  product.stock > 10 ? 'text-green-600' :
-                  product.stock > 0 ? 'text-yellow-600' : 'text-red-600'
-                }`}>
+                <span className={`font-medium ${product.stock > 10 ? 'text-green-600' :
+                    product.stock > 0 ? 'text-yellow-600' : 'text-red-600'
+                  }`}>
                   {product.stock > 10 ? (
                     <span className="flex items-center">
                       <span className="w-2 h-2 bg-green-600 rounded-full mr-2"></span>
@@ -348,6 +348,92 @@ const ProductDetails = () => {
               </div>
             </div>
 
+            {/* Pricing Type Selector - Only show if wholesale is available */}
+            {product.allowWholesale && product.wholesalePrice && (
+              <div className="mb-6 p-4 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg border border-green-200">
+                <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                  <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  Choose Pricing Option
+                </h3>
+                <div className="space-y-3">
+                  {/* Retail Option */}
+                  <label className={`flex items-center justify-between p-3 rounded-lg border-2 cursor-pointer transition-all ${pricingType === 'retail'
+                      ? 'border-blue-500 bg-blue-50'
+                      : 'border-gray-200 hover:border-gray-300 bg-white'
+                    }`}>
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="radio"
+                        name="pricingType"
+                        value="retail"
+                        checked={pricingType === 'retail'}
+                        onChange={(e) => setPricingType(e.target.value)}
+                        className="w-4 h-4 text-blue-600"
+                      />
+                      <div>
+                        <div className="font-medium text-gray-800">Retail Price</div>
+                        <div className="text-sm text-gray-600">Standard pricing for any quantity</div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-xl font-bold text-blue-600">
+                        KES {product.price?.toLocaleString()}
+                      </div>
+                      <div className="text-xs text-gray-500">per unit</div>
+                    </div>
+                  </label>
+
+                  {/* Wholesale Option */}
+                  <label className={`flex items-center justify-between p-3 rounded-lg border-2 cursor-pointer transition-all ${pricingType === 'wholesale'
+                      ? 'border-green-500 bg-green-50'
+                      : 'border-gray-200 hover:border-gray-300 bg-white'
+                    }`}>
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="radio"
+                        name="pricingType"
+                        value="wholesale"
+                        checked={pricingType === 'wholesale'}
+                        onChange={(e) => setPricingType(e.target.value)}
+                        className="w-4 h-4 text-green-600"
+                      />
+                      <div>
+                        <div className="font-medium text-gray-800 flex items-center gap-2">
+                          Wholesale Price
+                          <span className="px-2 py-0.5 bg-green-600 text-white text-xs rounded-full">
+                            Save {Math.round(((product.price - product.wholesalePrice) / product.price) * 100)}%
+                          </span>
+                        </div>
+                        <div className="text-sm text-gray-600">
+                          Minimum {product.minWholesaleQuantity || 10} units required
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-xl font-bold text-green-600">
+                        KES {product.wholesalePrice?.toLocaleString()}
+                      </div>
+                      <div className="text-xs text-gray-500">per unit</div>
+                    </div>
+                  </label>
+                </div>
+
+                {/* Warning if wholesale selected but quantity too low */}
+                {pricingType === 'wholesale' && quantity < (product.minWholesaleQuantity || 10) && (
+                  <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg flex items-start gap-2">
+                    <svg className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                    </svg>
+                    <div className="text-sm text-yellow-800">
+                      <strong>Note:</strong> Increase quantity to at least {product.minWholesaleQuantity || 10} units to qualify for wholesale pricing.
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
             <div className="mb-8">
               <h3 className="font-medium text-gray-800 mb-3">Quantity</h3>
               <div className="flex items-center space-x-4">
@@ -355,9 +441,8 @@ const ProductDetails = () => {
                   <button
                     onClick={decrementQuantity}
                     disabled={quantity <= 1}
-                    className={`px-4 py-3 hover:bg-gray-100 ${
-                      quantity <= 1 ? 'text-gray-400 cursor-not-allowed' : 'text-gray-700'
-                    }`}
+                    className={`px-4 py-3 hover:bg-gray-100 ${quantity <= 1 ? 'text-gray-400 cursor-not-allowed' : 'text-gray-700'
+                      }`}
                   >
                     −
                   </button>
@@ -372,9 +457,8 @@ const ProductDetails = () => {
                   <button
                     onClick={incrementQuantity}
                     disabled={!product || quantity >= product.stock}
-                    className={`px-4 py-3 hover:bg-gray-100 ${
-                      !product || quantity >= product.stock ? 'text-gray-400 cursor-not-allowed' : 'text-gray-700'
-                    }`}
+                    className={`px-4 py-3 hover:bg-gray-100 ${!product || quantity >= product.stock ? 'text-gray-400 cursor-not-allowed' : 'text-gray-700'
+                      }`}
                   >
                     +
                   </button>
@@ -407,11 +491,10 @@ const ProductDetails = () => {
                 <button
                   onClick={handleAddToCart}
                   disabled={!product || product.stock === 0}
-                  className={`flex-1 py-4 px-6 rounded-lg font-medium text-lg flex items-center justify-center gap-2 transition-all ${
-                    !product || product.stock === 0
+                  className={`flex-1 py-4 px-6 rounded-lg font-medium text-lg flex items-center justify-center gap-2 transition-all ${!product || product.stock === 0
                       ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                       : 'bg-blue-600 text-white hover:bg-blue-700 hover:shadow-lg'
-                  }`}
+                    }`}
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
@@ -419,15 +502,14 @@ const ProductDetails = () => {
                   {!product || product.stock === 0 ? 'Out of Stock' : 'Add to Cart'}
                 </button>
               )}
-              
+
               <button
                 onClick={handleBuyNow}
                 disabled={!product || product.stock === 0}
-                className={`py-4 px-8 rounded-lg font-medium text-lg flex items-center justify-center gap-2 transition-all ${
-                  !product || product.stock === 0
+                className={`py-4 px-8 rounded-lg font-medium text-lg flex items-center justify-center gap-2 transition-all ${!product || product.stock === 0
                     ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                     : 'bg-green-600 text-white hover:bg-green-700 hover:shadow-lg'
-                }`}
+                  }`}
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
@@ -466,31 +548,28 @@ const ProductDetails = () => {
             <nav className="flex">
               <button
                 onClick={() => setActiveTab('description')}
-                className={`px-8 py-4 font-medium border-b-2 transition-colors ${
-                  activeTab === 'description'
+                className={`px-8 py-4 font-medium border-b-2 transition-colors ${activeTab === 'description'
                     ? 'border-blue-500 text-blue-600'
                     : 'border-transparent text-gray-600 hover:text-gray-900'
-                }`}
+                  }`}
               >
                 Description
               </button>
               <button
                 onClick={() => setActiveTab('specifications')}
-                className={`px-8 py-4 font-medium border-b-2 transition-colors ${
-                  activeTab === 'specifications'
+                className={`px-8 py-4 font-medium border-b-2 transition-colors ${activeTab === 'specifications'
                     ? 'border-blue-500 text-blue-600'
                     : 'border-transparent text-gray-600 hover:text-gray-900'
-                }`}
+                  }`}
               >
                 Specifications
               </button>
               <button
                 onClick={() => setActiveTab('reviews')}
-                className={`px-8 py-4 font-medium border-b-2 transition-colors ${
-                  activeTab === 'reviews'
+                className={`px-8 py-4 font-medium border-b-2 transition-colors ${activeTab === 'reviews'
                     ? 'border-blue-500 text-blue-600'
                     : 'border-transparent text-gray-600 hover:text-gray-900'
-                }`}
+                  }`}
               >
                 Reviews ({reviews.length})
               </button>
@@ -576,9 +655,8 @@ const ProductDetails = () => {
                                   {[...Array(5)].map((_, i) => (
                                     <svg
                                       key={i}
-                                      className={`w-4 h-4 ${
-                                        i < review.rating ? 'text-yellow-400' : 'text-gray-300'
-                                      }`}
+                                      className={`w-4 h-4 ${i < review.rating ? 'text-yellow-400' : 'text-gray-300'
+                                        }`}
                                       fill="currentColor"
                                       viewBox="0 0 20 20"
                                     >
@@ -600,13 +678,13 @@ const ProductDetails = () => {
                             })}
                           </span>
                         </div>
-                        
+
                         {review.title && (
                           <h4 className="font-medium text-lg mb-3">{review.title}</h4>
                         )}
-                        
+
                         <p className="text-gray-700 mb-4">{review.comment}</p>
-                        
+
                         {review.images && review.images.length > 0 && (
                           <div className="flex space-x-2 mb-4">
                             {review.images.slice(0, 3).map((img, index) => (
@@ -619,7 +697,7 @@ const ProductDetails = () => {
                             ))}
                           </div>
                         )}
-                        
+
                         {review.reply && (
                           <div className="bg-gray-50 p-4 rounded-lg mt-4">
                             <div className="flex justify-between items-center mb-2">
@@ -658,7 +736,7 @@ const ProductDetails = () => {
                         ))}
                       </div>
                     </div>
-                    
+
                     <div>
                       <label className="block text-sm font-medium mb-2">Title</label>
                       <input
@@ -669,7 +747,7 @@ const ProductDetails = () => {
                         placeholder="Summarize your experience"
                       />
                     </div>
-                    
+
                     <div>
                       <label className="block text-sm font-medium mb-2">Your Review</label>
                       <textarea
@@ -681,7 +759,7 @@ const ProductDetails = () => {
                         required
                       />
                     </div>
-                    
+
                     <div className="flex space-x-4">
                       <button
                         type="submit"

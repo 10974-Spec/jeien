@@ -12,6 +12,7 @@ import AdminDashboard from '../pages/admin/Dashboard'
 import AdminProducts from '../pages/admin/Products'
 import AdminCategories from '../pages/admin/Categories'
 import AdminVendors from '../pages/admin/Vendors'
+import AdminVendorDetails from '../pages/admin/VendorDetails'
 import AdminOrders from '../pages/admin/Orders'
 import AdminPayments from '../pages/admin/Payments'
 import AdminBanners from '../pages/admin/Banners'
@@ -27,6 +28,7 @@ import VendorPayments from '../pages/vendor/Payments'
 
 import Home from '../pages/buyer/Home'
 import Shop from '../pages/buyer/Shop'
+import Search from '../pages/buyer/Search'
 import About from '../pages/buyer/About'
 import Category from '../pages/buyer/Category'
 import ProductDetails from '../pages/buyer/ProductDetails'
@@ -50,9 +52,9 @@ const PrivateRoute = ({ children, allowedRoles }) => {
 
   // Normalize the user's role to uppercase for comparison
   const userRole = user?.role?.toUpperCase() || ''
-  
+
   // Normalize allowed roles to uppercase
-  const normalizedAllowedRoles = allowedRoles 
+  const normalizedAllowedRoles = allowedRoles
     ? allowedRoles.map(role => role.toUpperCase())
     : []
 
@@ -81,7 +83,7 @@ const PublicRoute = ({ children }) => {
   if (user) {
     // Normalize role to uppercase
     const role = user?.role?.toUpperCase() || ''
-    
+
     if (role === 'ADMIN') {
       return <Navigate to="/admin/dashboard" replace />
     }
@@ -142,6 +144,7 @@ function AppRouter() {
         <Route path="products/edit/:id" element={<AdminProducts />} />
         <Route path="categories" element={<AdminCategories />} />
         <Route path="vendors" element={<AdminVendors />} />
+        <Route path="vendors/:id" element={<AdminVendorDetails />} />
         <Route path="orders" element={<AdminOrders />} />
         <Route path="payments" element={<AdminPayments />} />
         <Route path="banners" element={<AdminBanners />} />
@@ -170,7 +173,7 @@ function AppRouter() {
         <Route path="product/:id" element={<ProductDetails />} />
         <Route path="cart" element={<Cart />} />
         <Route path="checkout" element={<Checkout />} />
-        
+
         {/* Protected buyer-only routes */}
         <Route path="profile" element={
           <PrivateRoute allowedRoles={['buyer', 'vendor', 'admin']}>
@@ -182,10 +185,10 @@ function AppRouter() {
             <BuyerOrders />
           </PrivateRoute>
         } />
-        
-        {/* Add search redirect to shop page */}
-        <Route path="search" element={<Navigate to="/shop" replace />} />
-        
+
+        {/* Search page */}
+        <Route path="search" element={<Search />} />
+
         {/* Add vendors page */}
         <Route path="vendors" element={
           <div className="min-h-screen flex items-center justify-center">
@@ -195,7 +198,7 @@ function AppRouter() {
             </div>
           </div>
         } />
-        
+
         {/* Add deals redirect to shop with deals filter */}
         <Route path="deals" element={<Navigate to="/shop?deals=true" replace />} />
       </Route>

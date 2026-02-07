@@ -1,18 +1,21 @@
 import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { 
-  ChevronRight, ArrowRight, Zap, Star, TrendingUp, Flame, 
-  Shield, Truck, Clock, Gift, Crown, Percent, Car, Smartphone, 
-  Shirt, Home as HomeIcon, Dumbbell, Sparkles, Baby, BookOpen, Laptop, 
-  Sofa, Watch, Gamepad2, Plane, HeartPulse, Music, Camera, 
-  Wrench, PawPrint, Gem, Heart, ShoppingCart, Eye, 
+import toast from 'react-hot-toast'
+import {
+  ChevronRight, ArrowRight, Zap, Star, TrendingUp, Flame,
+  Shield, Truck, Clock, Gift, Crown, Percent, Car, Smartphone,
+  Shirt, Home as HomeIcon, Dumbbell, Sparkles, Baby, BookOpen, Laptop,
+  Sofa, Watch, Gamepad2, Plane, HeartPulse, Music, Camera,
+  Wrench, PawPrint, Gem, Heart, ShoppingCart, Eye,
   ChevronLeft, ChevronRight as ChevronRightIcon,
   Loader2, Menu, X, User, LogOut, LogIn, UserPlus
 } from 'lucide-react'
 import productService from '../../services/product.service'
 import categoryService from '../../services/category.service'
 import bannerService from '../../services/banner.service'
+import { useCart } from '../../hooks/useCart'
+import { useWishlist } from '../../hooks/useWishlist'
 
 // Button Component
 const Button = ({ children, variant = 'default', size = 'md', className = '', asChild = false, disabled = false, loading = false, href, onClick, ...props }) => {
@@ -29,7 +32,7 @@ const Button = ({ children, variant = 'default', size = 'md', className = '', as
     lg: 'px-6 py-3 text-base',
     xl: 'px-8 py-4 text-lg',
   }
-  
+
   // Determine component to render
   let Comp = 'button'
   if (asChild) {
@@ -38,7 +41,7 @@ const Button = ({ children, variant = 'default', size = 'md', className = '', as
   } else if (href) {
     Comp = 'a'
   }
-  
+
   return (
     <Comp
       className={`${baseStyles} ${variants[variant]} ${sizes[size]} ${className} ${loading ? 'relative' : ''}`}
@@ -66,7 +69,7 @@ const Badge = ({ children, variant = 'default', className = '' }) => {
     warning: 'bg-yellow-100 text-yellow-800',
     success: 'bg-green-100 text-green-800',
   }
-  
+
   return (
     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${variants[variant]} ${className}`}>
       {children}
@@ -79,6 +82,10 @@ const ProductCard = ({ product }) => {
   const [isHovered, setIsHovered] = useState(false)
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const [addingToCart, setAddingToCart] = useState(false)
+
+  const { addToCart } = useCart()
+  const { toggleWishlist, isInWishlist } = useWishlist()
+  const inWishlist = isInWishlist(product._id)
 
   const images = product.images || []
   const allImages = images.length > 0 ? images : ['https://images.unsplash.com/photo-1551028719-00167b16eac5?w=400']
@@ -98,17 +105,42 @@ const ProductCard = ({ product }) => {
   const handleAddToCart = async (e) => {
     e.preventDefault()
     e.stopPropagation()
-    
+
     setAddingToCart(true)
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500))
-      // Add to cart logic here
-      console.log('Added to cart:', product._id)
+      addToCart(product, 1)
+      toast.success('Added to cart!', {
+        icon: '🛒',
+        duration: 2000,
+      })
     } catch (error) {
       console.error('Failed to add to cart:', error)
+      toast.error('Failed to add to cart')
     } finally {
       setAddingToCart(false)
+    }
+  }
+
+  const handleToggleWishlist = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+
+    try {
+      toggleWishlist(product)
+      if (inWishlist) {
+        toast.success('Removed from wishlist', {
+          icon: '💔',
+          duration: 2000,
+        })
+      } else {
+        toast.success('Added to wishlist!', {
+          icon: '❤️',
+          duration: 2000,
+        })
+      }
+    } catch (error) {
+      console.error('Failed to toggle wishlist:', error)
+      toast.error('Failed to update wishlist')
     }
   }
 
@@ -146,9 +178,8 @@ const ProductCard = ({ product }) => {
                 {allImages.map((_, idx) => (
                   <span
                     key={idx}
-                    className={`w-1.5 h-1.5 rounded-full transition-colors ${
-                      idx === currentImageIndex ? 'bg-white' : 'bg-white/50'
-                    }`}
+                    className={`w-1.5 h-1.5 rounded-full transition-colors ${idx === currentImageIndex ? 'bg-white' : 'bg-white/50'
+                      }`}
                   />
                 ))}
               </div>
@@ -183,21 +214,17 @@ const ProductCard = ({ product }) => {
               className="absolute top-3 right-3 flex flex-col gap-2 z-10"
               onClick={(e) => e.preventDefault()}
             >
-              <Button 
-                size="sm" 
-                variant="secondary" 
-                className="h-8 w-8 rounded-full p-0"
-                onClick={(e) => {
-                  e.preventDefault()
-                  e.stopPropagation()
-                  // Add to wishlist logic here
-                }}
+              <Button
+                size="sm"
+                variant="secondary"
+                className={`h-8 w-8 rounded-full p-0 ${inWishlist ? 'bg-red-100 hover:bg-red-200' : ''}`}
+                onClick={handleToggleWishlist}
               >
-                <Heart className="h-4 w-4" />
+                <Heart className={`h-4 w-4 ${inWishlist ? 'fill-red-500 text-red-500' : ''}`} />
               </Button>
-              <Button 
-                size="sm" 
-                variant="secondary" 
+              <Button
+                size="sm"
+                variant="secondary"
                 className="h-8 w-8 rounded-full p-0"
                 onClick={(e) => {
                   e.preventDefault()
@@ -230,6 +257,13 @@ const ProductCard = ({ product }) => {
               </span>
             )}
           </div>
+          {product.allowWholesale && product.wholesalePrice && (
+            <div className="mt-1">
+              <span className="text-xs text-green-600 font-medium">
+                Wholesale: KES {product.wholesalePrice?.toLocaleString()} (Min: {product.minWholesaleQuantity || 10})
+              </span>
+            </div>
+          )}
         </div>
       ) : (
         <motion.div
@@ -238,14 +272,14 @@ const ProductCard = ({ product }) => {
           className="absolute left-0 right-0 -bottom-2 z-20 mx-1 p-4 rounded-2xl bg-white/80 backdrop-blur-xl border border-white/20 shadow-xl"
         >
           {product.vendor && (
-            <Link 
-              to={`/vendor/${product.vendor?._id}`} 
+            <Link
+              to={`/vendor/${product.vendor?._id}`}
               className="text-xs text-gray-500 hover:text-blue-700 transition-colors block"
             >
               {product.vendor?.storeName || product.vendor?.name || 'Unknown Vendor'}
             </Link>
           )}
-          
+
           <Link to={`/product/${product._id}`}>
             <h3 className="font-medium text-sm mt-1 line-clamp-2 hover:text-blue-700 transition-colors">
               {product.title}
@@ -257,11 +291,10 @@ const ProductCard = ({ product }) => {
               {[...Array(5)].map((_, i) => (
                 <Star
                   key={i}
-                  className={`h-3 w-3 ${
-                    i < Math.floor(product.averageRating || 0)
-                      ? 'text-yellow-400 fill-yellow-400'
-                      : 'text-gray-300'
-                  }`}
+                  className={`h-3 w-3 ${i < Math.floor(product.averageRating || 0)
+                    ? 'text-yellow-400 fill-yellow-400'
+                    : 'text-gray-300'
+                    }`}
                 />
               ))}
             </div>
@@ -279,6 +312,20 @@ const ProductCard = ({ product }) => {
             )}
           </div>
 
+          {product.allowWholesale && product.wholesalePrice && (
+            <div className="mt-1.5 px-2 py-1 bg-green-50 rounded-lg border border-green-200">
+              <div className="flex items-center gap-1">
+                <span className="text-xs font-semibold text-green-700">Wholesale:</span>
+                <span className="text-xs font-bold text-green-800">
+                  KES {product.wholesalePrice?.toLocaleString()}
+                </span>
+              </div>
+              <span className="text-[10px] text-green-600">
+                Min. {product.minWholesaleQuantity || 10} units
+              </span>
+            </div>
+          )}
+
           <div className="mt-2">
             <span className="text-xs text-green-600 flex items-center gap-1">
               <span className="w-1.5 h-1.5 rounded-full bg-green-600" />
@@ -286,8 +333,8 @@ const ProductCard = ({ product }) => {
             </span>
           </div>
 
-          <Button 
-            className="w-full mt-3 gap-2" 
+          <Button
+            className="w-full mt-3 gap-2"
             size="sm"
             onClick={handleAddToCart}
             disabled={product.stock === 0}
@@ -397,10 +444,10 @@ const CategorySection = ({ categories, loading }) => {
 
       try {
         setLoadingImages(true)
-        
+
         // Fetch images sequentially to avoid rate limits
         const categoryData = []
-        
+
         for (let i = 0; i < Math.min(categories.length, 21); i++) {
           const category = categories[i]
           try {
@@ -408,7 +455,7 @@ const CategorySection = ({ categories, loading }) => {
             if (i > 0) {
               await new Promise(resolve => setTimeout(resolve, 200))
             }
-            
+
             const response = await categoryService.getCategoryById(category._id)
             categoryData.push({
               id: category._id,
@@ -503,7 +550,7 @@ const CategorySection = ({ categories, loading }) => {
                 gradient: getGradientForIndex(index)
               }
               const hasImage = categoryData.image
-              
+
               return (
                 <motion.div
                   key={category._id}
@@ -532,7 +579,7 @@ const CategorySection = ({ categories, loading }) => {
                         </div>
                       )}
                     </div>
-                    
+
                     <h3 className="font-medium text-xs text-center leading-tight">{category.name}</h3>
                     <span className="text-[10px] text-gray-500 mt-0.5">
                       {category.stats?.totalProducts || 0} items
@@ -1012,9 +1059,9 @@ const BuyerHome = () => {
     try {
       setLoading(true)
       setError(null)
-      
+
       console.log('🔄 Fetching home data with sequential requests...')
-      
+
       // Fetch data sequentially with delays to avoid rate limiting
       const tasks = [
         // 1. Fetch all banners
@@ -1024,19 +1071,19 @@ const BuyerHome = () => {
             const response = await bannerService.getActiveAds()
             const allBanners = response.data || []
             setBanners(allBanners)
-            
+
             // Filter banners by position
             setHomeTopBanners(allBanners.filter(b => b.position === 'HOME_TOP'))
             setHomeMiddleBanners(allBanners.filter(b => b.position === 'HOME_MIDDLE'))
             setHomeBottomBanners(allBanners.filter(b => b.position === 'HOME_BOTTOM'))
-            
+
             console.log('Banners loaded:', {
               total: allBanners.length,
               homeTop: allBanners.filter(b => b.position === 'HOME_TOP').length,
               homeMiddle: allBanners.filter(b => b.position === 'HOME_MIDDLE').length,
               homeBottom: allBanners.filter(b => b.position === 'HOME_BOTTOM').length
             })
-            
+
             return response
           } catch (bannerError) {
             console.error('Failed to fetch banners:', bannerError)
@@ -1047,12 +1094,12 @@ const BuyerHome = () => {
             setHomeBottomBanners([])
           }
         },
-        
+
         // 2. Wait 500ms
         async () => {
           await new Promise(resolve => setTimeout(resolve, 500))
         },
-        
+
         // 3. Fetch featured products
         async () => {
           console.log('Fetching featured products...')
@@ -1060,12 +1107,12 @@ const BuyerHome = () => {
           setFeaturedProducts(response.data?.products || [])
           return response
         },
-        
+
         // 4. Wait 800ms
         async () => {
           await new Promise(resolve => setTimeout(resolve, 800))
         },
-        
+
         // 5. Fetch categories
         async () => {
           console.log('Fetching categories...')
@@ -1073,12 +1120,12 @@ const BuyerHome = () => {
           setCategories(response.data || [])
           return response
         },
-        
+
         // 6. Wait 800ms
         async () => {
           await new Promise(resolve => setTimeout(resolve, 800))
         },
-        
+
         // 7. Fetch new arrivals
         async () => {
           console.log('Fetching new arrivals...')
@@ -1086,12 +1133,12 @@ const BuyerHome = () => {
           setNewArrivals(response.data?.products || [])
           return response
         },
-        
+
         // 8. Wait 600ms
         async () => {
           await new Promise(resolve => setTimeout(resolve, 600))
         },
-        
+
         // 9. Fetch best sellers
         async () => {
           console.log('Fetching best sellers...')
@@ -1099,12 +1146,12 @@ const BuyerHome = () => {
           setBestSellers(response.data?.products || [])
           return response
         },
-        
+
         // 10. Wait 600ms
         async () => {
           await new Promise(resolve => setTimeout(resolve, 600))
         },
-        
+
         // 11. Fetch trending products
         async () => {
           console.log('Fetching trending products...')
@@ -1113,7 +1160,7 @@ const BuyerHome = () => {
           return response
         }
       ]
-      
+
       // Execute tasks sequentially
       for (let i = 0; i < tasks.length; i++) {
         try {
@@ -1123,7 +1170,7 @@ const BuyerHome = () => {
           // Continue with other tasks even if one fails
         }
       }
-      
+
       console.log('✅ Home data loaded successfully')
       console.log({
         banners: banners.length,
@@ -1136,11 +1183,11 @@ const BuyerHome = () => {
         bestSellers: bestSellers.length,
         trending: trendingProducts.length
       })
-      
+
     } catch (error) {
       console.error('❌ Failed to fetch home data:', error)
       setError('Failed to load data. Please try again.')
-      
+
       // Set minimal data for fallback
       setBanners([])
       setHomeTopBanners([])
@@ -1181,11 +1228,11 @@ const BuyerHome = () => {
       {isMobileMenuOpen && (
         <div className="lg:hidden fixed inset-0 z-50">
           {/* Backdrop */}
-          <div 
+          <div
             className="absolute inset-0 bg-black/50"
             onClick={() => setIsMobileMenuOpen(false)}
           />
-          
+
           {/* Menu Panel */}
           <motion.div
             initial={{ x: '-100%' }}
@@ -1264,7 +1311,7 @@ const BuyerHome = () => {
               <div className="px-3 py-2">
                 <span className="text-xs font-medium text-gray-500 uppercase">Account</span>
               </div>
-              
+
               {/* Login Button */}
               <Link
                 to="/login"
@@ -1274,7 +1321,7 @@ const BuyerHome = () => {
                 <LogIn className="h-5 w-5" />
                 Login
               </Link>
-              
+
               {/* Signup Button */}
               <Link
                 to="/register"
@@ -1284,7 +1331,7 @@ const BuyerHome = () => {
                 <UserPlus className="h-5 w-5" />
                 Sign Up
               </Link>
-              
+
               {/* Vendor Registration */}
               <Link
                 to="/register?vendor=true"
@@ -1411,7 +1458,7 @@ const BuyerHome = () => {
         <div className="container mx-auto py-8 px-4">
           <div className="grid lg:grid-cols-3 gap-4">
             {/* Main Banner */}
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               className="lg:col-span-2 relative rounded-2xl overflow-hidden bg-gradient-to-br from-blue-100 to-blue-200 min-h-[320px] lg:min-h-[400px]"
@@ -1440,8 +1487,8 @@ const BuyerHome = () => {
                       <Sparkles className="h-4 w-4" />
                       {homeTopBanners[0].label || 'Limited Time Offer'}
                     </motion.div>
-                    
-                    <motion.h2 
+
+                    <motion.h2
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: 0.3 }}
@@ -1449,8 +1496,8 @@ const BuyerHome = () => {
                     >
                       {homeTopBanners[0].title}
                     </motion.h2>
-                    
-                    <motion.p 
+
+                    <motion.p
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: 0.4 }}
@@ -1458,7 +1505,7 @@ const BuyerHome = () => {
                     >
                       {homeTopBanners[0].description}
                     </motion.p>
-                    
+
                     <motion.div
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
@@ -1483,8 +1530,8 @@ const BuyerHome = () => {
                     <Sparkles className="h-4 w-4" />
                     Welcome to JEIEN
                   </motion.div>
-                  
-                  <motion.h2 
+
+                  <motion.h2
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.3 }}
@@ -1493,8 +1540,8 @@ const BuyerHome = () => {
                     Discover Premium<br />
                     <span className="text-blue-700">Products</span>
                   </motion.h2>
-                  
-                  <motion.p 
+
+                  <motion.p
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.4 }}
@@ -1502,7 +1549,7 @@ const BuyerHome = () => {
                   >
                     Shop from thousands of trusted vendors. Quality products at unbeatable prices.
                   </motion.p>
-                  
+
                   <motion.div
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
@@ -1523,7 +1570,7 @@ const BuyerHome = () => {
 
             {/* Side Banners */}
             <div className="flex flex-col gap-4">
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.3 }}
@@ -1539,7 +1586,7 @@ const BuyerHome = () => {
                 </div>
               </motion.div>
 
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.4 }}

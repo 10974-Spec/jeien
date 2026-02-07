@@ -17,7 +17,7 @@ const AdminVendors = () => {
       const params = {}
       if (search) params.search = search
       if (statusFilter) params.active = statusFilter === 'active'
-      
+
       const response = await vendorService.getAllVendors(params)
       setVendors(response.data.vendors || [])
     } catch (error) {
@@ -112,9 +112,8 @@ const AdminVendors = () => {
                     <td className="py-4">KES {vendor.stats?.totalRevenue || 0}</td>
                     <td className="py-4">
                       <div className="space-y-1">
-                        <span className={`px-2 py-1 rounded text-xs ${
-                          vendor.active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                        }`}>
+                        <span className={`px-2 py-1 rounded text-xs ${vendor.active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                          }`}>
                           {vendor.active ? 'Active' : 'Inactive'}
                         </span>
                         {vendor.verified && (
@@ -128,27 +127,28 @@ const AdminVendors = () => {
                       <div className="flex space-x-2">
                         <button
                           onClick={() => handleStatusChange(vendor._id, !vendor.active)}
-                          className={`px-3 py-1 text-sm rounded ${
-                            vendor.active 
-                              ? 'bg-red-100 text-red-800 hover:bg-red-200' 
+                          className={`px-3 py-1 text-sm rounded ${vendor.active
+                              ? 'bg-red-100 text-red-800 hover:bg-red-200'
                               : 'bg-green-100 text-green-800 hover:bg-green-200'
-                          }`}
+                            }`}
                         >
                           {vendor.active ? 'Deactivate' : 'Activate'}
                         </button>
                         <button
                           onClick={() => handleVerification(vendor._id, !vendor.verified)}
-                          className={`px-3 py-1 text-sm rounded ${
-                            vendor.verified 
-                              ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200' 
+                          className={`px-3 py-1 text-sm rounded ${vendor.verified
+                              ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
                               : 'bg-blue-100 text-blue-800 hover:bg-blue-200'
-                          }`}
+                            }`}
                         >
                           {vendor.verified ? 'Unverify' : 'Verify'}
                         </button>
-                        <button className="px-3 py-1 text-sm bg-gray-100 rounded hover:bg-gray-200">
+                        <Link
+                          to={`/admin/vendors/${vendor._id}`}
+                          className="px-3 py-1 text-sm bg-gray-100 rounded hover:bg-gray-200 inline-block"
+                        >
                           View
-                        </button>
+                        </Link>
                       </div>
                     </td>
                   </tr>

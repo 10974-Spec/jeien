@@ -5,6 +5,7 @@ import { Search, ShoppingCart, Heart, User, Menu, MapPin, ChevronDown, Phone, Lo
 import { useAuth } from "../../hooks/useAuth";
 import { useCart } from "../../hooks/useCart";
 import { useWishlist } from "../../hooks/useWishlist";
+import categoryService from "../../services/category.service";
 
 // Button Component
 const Button = ({ children, variant = "default", size = "md", className = "", asChild = false, ...props }) => {
@@ -63,17 +64,6 @@ const Badge = ({ children, variant = "default", className = "" }) => {
   );
 };
 
-const categories = [
-  { name: "Fruits & Vegetables", path: "/category/fruits-vegetables" },
-  { name: "Breads & Sweets", path: "/category/breads-sweets" },
-  { name: "Frozen Seafoods", path: "/category/seafood" },
-  { name: "Raw Meats", path: "/category/meat" },
-  { name: "Wines & Drinks", path: "/category/drinks" },
-  { name: "Coffees & Teas", path: "/category/coffee-tea" },
-  { name: "Milks & Dairies", path: "/category/dairy" },
-  { name: "Pet Foods", path: "/category/pet-food" },
-];
-
 const navLinks = [
   { name: "Home", path: "/" },
   { name: "Shop", path: "/search" },
@@ -87,10 +77,12 @@ const navLinks = [
 export const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const [isCategoriesOpen, setIsCategoriesOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [categories, setCategories] = useState([]);
   const navigate = useNavigate();
   const location = useLocation();
-  
+
   const { user, isAuthenticated, logout } = useAuth();
   const { cartItems, getTotalItems } = useCart();
   const { wishlist, getWishlistCount } = useWishlist();
@@ -124,16 +116,32 @@ export const Header = () => {
     }
   };
 
+  // Fetch categories
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await categoryService.getAllCategories();
+        setCategories(response.data.categories || response.data || []);
+      } catch (error) {
+        console.error('Failed to fetch categories:', error);
+      }
+    };
+    fetchCategories();
+  }, []);
+
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (isProfileMenuOpen && !event.target.closest('.profile-menu')) {
         setIsProfileMenuOpen(false);
       }
+      if (isCategoriesOpen && !event.target.closest('.categories-menu')) {
+        setIsCategoriesOpen(false);
+      }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isProfileMenuOpen]);
+  }, [isProfileMenuOpen, isCategoriesOpen]);
 
   // Reset search when navigating
   useEffect(() => {
@@ -157,7 +165,7 @@ export const Header = () => {
               <span>Nairobi, Kenya</span>
             </div>
             <span className="text-blue-200">
-Fast And Secure Delivery 
+              Fast And Secure Delivery
             </span>
           </div>
           <div className="flex items-center gap-4">
@@ -182,7 +190,7 @@ Fast And Secure Delivery
           <div className="flex items-center justify-between gap-4">
             {/* Logo */}
             <Link to="/" onClick={() => setIsMenuOpen(false)}>
-              <motion.div 
+              <motion.div
                 className="flex items-center gap-2"
                 whileHover={{ scale: 1.02 }}
               >
@@ -201,7 +209,7 @@ Fast And Secure Delivery
               <div className="relative flex items-center">
                 <div className="relative flex-1">
                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <Input 
+                  <Input
                     placeholder="Search for products, brands and more..."
                     className="pl-11 pr-4 h-12 rounded-l-xl rounded-r-none border-r-0 bg-white focus:outline-none focus:ring-2 focus:ring-blue-600"
                     value={searchQuery}
@@ -217,9 +225,9 @@ Fast And Secure Delivery
             {/* Actions */}
             <div className="flex items-center gap-2">
               {/* Wishlist Button */}
-              <Button 
-                variant="ghost" 
-                size="icon" 
+              <Button
+                variant="ghost"
+                size="icon"
                 className="relative hidden sm:flex"
                 asChild
               >
@@ -232,11 +240,11 @@ Fast And Secure Delivery
                   )}
                 </Link>
               </Button>
-              
+
               {/* Cart Button */}
-              <Button 
-                variant="ghost" 
-                size="icon" 
+              <Button
+                variant="ghost"
+                size="icon"
                 className="relative"
                 asChild
               >
@@ -252,9 +260,9 @@ Fast And Secure Delivery
 
               {/* Account Button with Dropdown */}
               <div className="hidden sm:flex items-center gap-2 pl-2 border-l border-gray-200 relative profile-menu">
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
+                <Button
+                  variant="ghost"
+                  size="sm"
                   className="gap-2 text-gray-600 hover:text-blue-700"
                   onClick={handleProfileClick}
                 >
@@ -277,16 +285,16 @@ Fast And Secure Delivery
                           <p className="text-sm text-gray-500">{user?.email}</p>
                         </div>
                         <div className="p-2">
-                          <Link 
-                            to="/profile" 
+                          <Link
+                            to="/profile"
                             className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
                             onClick={() => setIsProfileMenuOpen(false)}
                           >
                             <User className="h-4 w-4" />
                             My Profile
                           </Link>
-                          <Link 
-                            to="/orders" 
+                          <Link
+                            to="/orders"
                             className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
                             onClick={() => setIsProfileMenuOpen(false)}
                           >
@@ -294,8 +302,8 @@ Fast And Secure Delivery
                             My Orders
                           </Link>
                           {user?.role === 'vendor' && (
-                            <Link 
-                              to="/vendor" 
+                            <Link
+                              to="/vendor"
                               className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
                               onClick={() => setIsProfileMenuOpen(false)}
                             >
@@ -303,8 +311,8 @@ Fast And Secure Delivery
                             </Link>
                           )}
                           {user?.role === 'admin' && (
-                            <Link 
-                              to="/admin" 
+                            <Link
+                              to="/admin"
                               className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
                               onClick={() => setIsProfileMenuOpen(false)}
                             >
@@ -324,8 +332,8 @@ Fast And Secure Delivery
                       <div className="p-4">
                         <p className="text-sm text-gray-600 mb-3">Sign in to access your account</p>
                         <div className="space-y-2">
-                          <Button 
-                            className="w-full bg-gradient-to-r from-blue-700 to-blue-800 hover:from-blue-800 hover:to-blue-900" 
+                          <Button
+                            className="w-full bg-gradient-to-r from-blue-700 to-blue-800 hover:from-blue-800 hover:to-blue-900"
                             size="sm"
                             onClick={() => {
                               setIsProfileMenuOpen(false);
@@ -334,9 +342,9 @@ Fast And Secure Delivery
                           >
                             Sign In
                           </Button>
-                          <Button 
-                            variant="outline" 
-                            className="w-full border-blue-700 text-blue-700 hover:bg-blue-50" 
+                          <Button
+                            variant="outline"
+                            className="w-full border-blue-700 text-blue-700 hover:bg-blue-50"
                             size="sm"
                             onClick={() => {
                               setIsProfileMenuOpen(false);
@@ -353,9 +361,9 @@ Fast And Secure Delivery
               </div>
 
               {/* Mobile Menu Toggle */}
-              <Button 
-                variant="ghost" 
-                size="icon" 
+              <Button
+                variant="ghost"
+                size="icon"
                 className="md:hidden text-gray-600 hover:text-blue-700"
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
               >
@@ -368,7 +376,7 @@ Fast And Secure Delivery
           <form onSubmit={handleSearch} className="mt-4 md:hidden">
             <div className="relative">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input 
+              <Input
                 placeholder="Search products..."
                 className="pl-11 h-11 rounded-xl bg-white"
                 value={searchQuery}
@@ -383,20 +391,64 @@ Fast And Secure Delivery
       <nav className="bg-white border-b border-gray-200 hidden lg:block">
         <div className="container mx-auto px-4">
           <div className="flex items-center gap-1">
-            <Button className="gap-2 rounded-none h-12 bg-gradient-to-r from-blue-700 to-blue-800 text-white hover:from-blue-800 hover:to-blue-900" asChild>
-              <Link to="/categories">
+            <div className="relative categories-menu">
+              <Button
+                className="gap-2 rounded-none h-12 bg-gradient-to-r from-blue-700 to-blue-800 text-white hover:from-blue-800 hover:to-blue-900"
+                onClick={() => setIsCategoriesOpen(!isCategoriesOpen)}
+              >
                 <Menu className="h-4 w-4" />
                 All Categories
-                <ChevronDown className="h-4 w-4" />
-              </Link>
-            </Button>
-            
+                <ChevronDown className={`h-4 w-4 transition-transform ${isCategoriesOpen ? 'rotate-180' : ''}`} />
+              </Button>
+
+              {/* Categories Dropdown */}
+              {isCategoriesOpen && categories.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="absolute top-full left-0 mt-0 w-64 bg-white rounded-b-lg shadow-xl border border-gray-200 z-50 max-h-96 overflow-y-auto"
+                >
+                  <div className="p-2">
+                    {categories.map((category) => (
+                      <div key={category._id}>
+                        <Link
+                          to={`/search?category=${category._id}`}
+                          className="flex items-center justify-between px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 rounded-md transition-colors"
+                          onClick={() => setIsCategoriesOpen(false)}
+                        >
+                          <span>{category.name}</span>
+                          {category.subcategories && category.subcategories.length > 0 && (
+                            <ChevronDown className="h-3 w-3 -rotate-90" />
+                          )}
+                        </Link>
+                        {/* Subcategories */}
+                        {category.subcategories && category.subcategories.length > 0 && (
+                          <div className="ml-4 mt-1 space-y-1">
+                            {category.subcategories.map((sub) => (
+                              <Link
+                                key={sub._id || sub}
+                                to={`/search?category=${category._id}&subcategory=${sub._id || sub}`}
+                                className="block px-3 py-1.5 text-xs text-gray-600 hover:bg-blue-50 hover:text-blue-600 rounded-md transition-colors"
+                                onClick={() => setIsCategoriesOpen(false)}
+                              >
+                                {sub.name || sub}
+                              </Link>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+            </div>
+
             <div className="flex items-center">
               {navLinks.map((item) => (
-                <Button 
-                  key={item.name} 
-                  variant="ghost" 
-                  className={`rounded-none h-12 px-4 ${location.pathname === item.path ? 'text-blue-700 bg-blue-50' : 'text-gray-600 hover:text-blue-700'}`} 
+                <Button
+                  key={item.name}
+                  variant="ghost"
+                  className={`rounded-none h-12 px-4 ${location.pathname === item.path ? 'text-blue-700 bg-blue-50' : 'text-gray-600 hover:text-blue-700'}`}
                   asChild
                 >
                   <Link to={item.path}>{item.name}</Link>
@@ -416,7 +468,7 @@ Fast And Secure Delivery
 
       {/* Mobile Menu */}
       {isMenuOpen && (
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: "auto" }}
           exit={{ opacity: 0, height: 0 }}
@@ -425,10 +477,10 @@ Fast And Secure Delivery
           <div className="container mx-auto py-4 px-4 space-y-2">
             {/* Navigation Links */}
             {navLinks.map((item) => (
-              <Button 
-                key={item.name} 
-                variant="ghost" 
-                className="w-full justify-start text-gray-600 hover:text-blue-700" 
+              <Button
+                key={item.name}
+                variant="ghost"
+                className="w-full justify-start text-gray-600 hover:text-blue-700"
                 asChild
                 onClick={() => setIsMenuOpen(false)}
               >
@@ -440,10 +492,10 @@ Fast And Secure Delivery
             <div className="pt-4 border-t border-gray-200">
               <p className="text-sm font-medium text-gray-700 mb-2 px-3">Categories</p>
               {categories.map((cat) => (
-                <Button 
-                  key={cat.name} 
-                  variant="ghost" 
-                  className="w-full justify-start text-gray-600 hover:text-blue-700 text-sm" 
+                <Button
+                  key={cat.name}
+                  variant="ghost"
+                  className="w-full justify-start text-gray-600 hover:text-blue-700 text-sm"
                   asChild
                   onClick={() => setIsMenuOpen(false)}
                 >
@@ -460,26 +512,26 @@ Fast And Secure Delivery
                     <p className="font-medium text-gray-900">{user?.name}</p>
                     <p className="text-sm text-gray-500">{user?.email}</p>
                   </div>
-                  <Button 
-                    variant="ghost" 
-                    className="w-full justify-start text-gray-600 hover:text-blue-700" 
-                    asChild 
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start text-gray-600 hover:text-blue-700"
+                    asChild
                     onClick={() => setIsMenuOpen(false)}
                   >
                     <Link to="/profile">My Profile</Link>
                   </Button>
-                  <Button 
-                    variant="ghost" 
-                    className="w-full justify-start text-gray-600 hover:text-blue-700" 
-                    asChild 
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start text-gray-600 hover:text-blue-700"
+                    asChild
                     onClick={() => setIsMenuOpen(false)}
                   >
                     <Link to="/orders">My Orders</Link>
                   </Button>
-                  <Button 
-                    variant="ghost" 
-                    className="w-full justify-start text-gray-600 hover:text-blue-700" 
-                    asChild 
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start text-gray-600 hover:text-blue-700"
+                    asChild
                     onClick={() => setIsMenuOpen(false)}
                   >
                     <Link to="/wishlist">
@@ -487,28 +539,28 @@ Fast And Secure Delivery
                     </Link>
                   </Button>
                   {user?.role === 'vendor' && (
-                    <Button 
-                      variant="ghost" 
-                      className="w-full justify-start text-gray-600 hover:text-blue-700" 
-                      asChild 
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start text-gray-600 hover:text-blue-700"
+                      asChild
                       onClick={() => setIsMenuOpen(false)}
                     >
                       <Link to="/vendor">Vendor Dashboard</Link>
                     </Button>
                   )}
                   {user?.role === 'admin' && (
-                    <Button 
-                      variant="ghost" 
-                      className="w-full justify-start text-gray-600 hover:text-blue-700" 
-                      asChild 
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start text-gray-600 hover:text-blue-700"
+                      asChild
                       onClick={() => setIsMenuOpen(false)}
                     >
                       <Link to="/admin">Admin Panel</Link>
                     </Button>
                   )}
-                  <Button 
-                    variant="ghost" 
-                    className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50" 
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
                     onClick={handleLogout}
                   >
                     Logout
@@ -516,18 +568,18 @@ Fast And Secure Delivery
                 </>
               ) : (
                 <>
-                  <Button 
-                    variant="ghost" 
-                    className="w-full justify-start text-gray-600 hover:text-blue-700" 
-                    asChild 
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start text-gray-600 hover:text-blue-700"
+                    asChild
                     onClick={() => setIsMenuOpen(false)}
                   >
                     <Link to="/login">Sign In</Link>
                   </Button>
-                  <Button 
-                    variant="ghost" 
-                    className="w-full justify-start text-gray-600 hover:text-blue-700" 
-                    asChild 
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start text-gray-600 hover:text-blue-700"
+                    asChild
                     onClick={() => setIsMenuOpen(false)}
                   >
                     <Link to="/register">Register</Link>

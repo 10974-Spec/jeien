@@ -2,8 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react'
 import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import productService from '../../services/product.service'
 import { debounce } from 'lodash'
-import { 
-  Edit, Trash2, Eye, CheckCircle, XCircle, 
+import {
+  Edit, Trash2, Eye, CheckCircle, XCircle,
   ExternalLink, AlertCircle, Package, EyeOff, Eye as EyeOpen,
   ArrowLeft, Save, X, Upload, Tag, DollarSign, Hash, Image as ImageIcon,
   Plus, Minus, Search, Filter, RefreshCw, TrendingUp, BarChart3,
@@ -17,11 +17,11 @@ const AdminProducts = () => {
   const { id } = useParams()
   const navigate = useNavigate()
   const location = useLocation()
-  
+
   // Check if we're in edit mode based on URL path
   const isEditMode = location.pathname.includes('/admin/products/edit/')
   const [mode, setMode] = useState(isEditMode ? 'edit' : 'list')
-  
+
   // List View State
   const [products, setProducts] = useState([])
   const [loading, setLoading] = useState(true)
@@ -40,6 +40,9 @@ const AdminProducts = () => {
     stock: '',
     category: '',
     sku: '',
+    allowWholesale: false,
+    wholesalePrice: '',
+    minWholesaleQuantity: 10,
   })
   const [selectedImages, setSelectedImages] = useState([])
   const [categories, setCategories] = useState([])
@@ -49,7 +52,7 @@ const AdminProducts = () => {
   const [selectedProduct, setSelectedProduct] = useState(null)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [actionLoading, setActionLoading] = useState({})
-  
+
   // Edit View State
   const [editingProduct, setEditingProduct] = useState(null)
   const [saving, setSaving] = useState(false)
@@ -73,7 +76,10 @@ const AdminProducts = () => {
     metaTitle: '',
     metaDescription: '',
     published: true,
-    approved: true
+    approved: true,
+    allowWholesale: false,
+    wholesalePrice: '',
+    minWholesaleQuantity: 10,
   })
   const [existingImages, setExistingImages] = useState([])
   const [newImages, setNewImages] = useState([])
@@ -122,16 +128,16 @@ const AdminProducts = () => {
     debounce(async (searchValue, filterValues) => {
       try {
         setIsSearching(true)
-        
+
         const params = {
           admin: 'true'
         }
-        
+
         if (searchValue) params.search = searchValue
         if (filterValues.category) params.category = filterValues.category
         if (filterValues.approved !== '') params.approved = filterValues.approved
         if (filterValues.published !== '') params.published = filterValues.published
-        
+
         const response = await productService.getAllProducts(params)
         setProducts(response.data.products || [])
       } catch (error) {
@@ -149,13 +155,13 @@ const AdminProducts = () => {
     // Update mode based on URL
     const newIsEditMode = location.pathname.includes('/admin/products/edit/')
     setMode(newIsEditMode ? 'edit' : 'list')
-    
+
     if (newIsEditMode && id) {
       fetchEditProduct()
     } else {
       fetchProducts()
     }
-    
+
     fetchCategories()
   }, [location.pathname, id])
 
@@ -170,10 +176,10 @@ const AdminProducts = () => {
     try {
       setLoadingCategories(true)
       console.log('Attempting to fetch categories...')
-      
+
       // First, check if the categories endpoint exists by trying a simple request
       const token = localStorage.getItem('token')
-      
+
       // Try with direct fetch first
       try {
         const response = await fetch('https://jeien-backend.onrender.com/api/categories', {
@@ -183,11 +189,11 @@ const AdminProducts = () => {
             ...(token && { 'Authorization': `Bearer ${token}` })
           }
         })
-        
+
         if (response.ok) {
           const data = await response.json()
           console.log('Categories fetched successfully from /api/categories:', data)
-          
+
           if (data.categories) {
             setCategories(data.categories)
           } else if (data.data?.categories) {
@@ -200,7 +206,7 @@ const AdminProducts = () => {
       } catch (endpointError) {
         console.log('/api/categories failed, trying other endpoints...')
       }
-      
+
       // Try without /api prefix
       try {
         const response = await fetch('https://jeien-backend.onrender.com/categories', {
@@ -210,11 +216,11 @@ const AdminProducts = () => {
             ...(token && { 'Authorization': `Bearer ${token}` })
           }
         })
-        
+
         if (response.ok) {
           const data = await response.json()
           console.log('Categories fetched successfully from /categories:', data)
-          
+
           if (data.categories) {
             setCategories(data.categories)
           } else if (data.data?.categories) {
@@ -227,7 +233,7 @@ const AdminProducts = () => {
       } catch (noApiError) {
         console.log('/categories endpoint also failed:', noApiError.message)
       }
-      
+
       // If both endpoints fail, create minimal categories for the form
       console.log('Categories endpoint not available, creating minimal categories for form')
       const minimalCategories = [
@@ -239,7 +245,7 @@ const AdminProducts = () => {
       ]
       setCategories(minimalCategories)
       showInfo('Note: Categories are limited. Please create categories first in Categories section.')
-      
+
     } catch (error) {
       console.error('Error in fetchCategories:', error)
       // Don't show error to user since we have fallback
@@ -248,19 +254,21 @@ const AdminProducts = () => {
     }
   }
 
+
+
   const fetchProducts = async () => {
     try {
       setLoading(true)
-      
+
       const params = {
         admin: 'true'
       }
-      
+
       if (filters.category) params.category = filters.category
       if (filters.approved !== '') params.approved = filters.approved
       if (filters.published !== '') params.published = filters.published
       if (searchTerm) params.search = searchTerm
-      
+
       const response = await productService.getAllProducts(params)
       setProducts(response.data.products || [])
     } catch (error) {
@@ -278,19 +286,19 @@ const AdminProducts = () => {
       setEditLoading(false)
       return
     }
-    
+
     try {
       setEditLoading(true)
       console.log('Fetching product with ID:', id)
-      
+
       const response = await productService.getProductById(id)
       console.log('Product data received:', response.data)
-      
+
       const productData = response.data.product || response.data
-      
+
       setEditingProduct(productData)
       setExistingImages(productData.images || [])
-      
+
       setFormData({
         title: productData.title || '',
         description: productData.description || '',
@@ -313,12 +321,12 @@ const AdminProducts = () => {
         published: productData.published !== false,
         approved: productData.approved !== false
       })
-      
+
       console.log('Form data set:', {
         ...formData,
         category: productData.category?._id || productData.category
       })
-      
+
     } catch (error) {
       console.error('Failed to fetch product:', error)
       showError('Failed to load product. Please try again.')
@@ -335,21 +343,21 @@ const AdminProducts = () => {
 
   const handleApprove = async (productId, currentStatus) => {
     if (actionLoading[productId]) return
-    
+
     try {
       setActionLoading(prev => ({ ...prev, [productId]: true }))
-      
+
       const newStatus = !currentStatus
       await productService.updateProduct(productId, { approved: newStatus })
-      
+
       showSuccess(`Product ${newStatus ? 'approved' : 'unapproved'} successfully!`)
-      
-      setProducts(prev => prev.map(product => 
-        product._id === productId 
+
+      setProducts(prev => prev.map(product =>
+        product._id === productId
           ? { ...product, approved: newStatus }
           : product
       ))
-      
+
     } catch (error) {
       console.error('Failed to update approval status:', error)
       showError(`Failed to update product: ${error.response?.data?.message || error.message}`)
@@ -360,21 +368,21 @@ const AdminProducts = () => {
 
   const handlePublishToggle = async (productId, currentStatus) => {
     if (actionLoading[productId]) return
-    
+
     try {
       setActionLoading(prev => ({ ...prev, [productId]: true }))
-      
+
       const newStatus = !currentStatus
       await productService.updateProduct(productId, { published: newStatus })
-      
+
       showSuccess(`Product ${newStatus ? 'published' : 'unpublished'} successfully!`)
-      
-      setProducts(prev => prev.map(product => 
-        product._id === productId 
+
+      setProducts(prev => prev.map(product =>
+        product._id === productId
           ? { ...product, published: newStatus }
           : product
       ))
-      
+
     } catch (error) {
       console.error('Failed to toggle publish status:', error)
       showError(`Failed to update product: ${error.response?.data?.message || error.message}`)
@@ -390,18 +398,18 @@ const AdminProducts = () => {
 
   const handleDeleteConfirm = async () => {
     if (!selectedProduct) return
-    
+
     try {
       setActionLoading(prev => ({ ...prev, [selectedProduct._id]: true }))
-      
+
       await productService.deleteProduct(selectedProduct._id)
-      
+
       showSuccess('Product deleted successfully!')
-      
+
       setProducts(prev => prev.filter(product => product._id !== selectedProduct._id))
       setShowDeleteConfirm(false)
       setSelectedProduct(null)
-      
+
     } catch (error) {
       console.error('Failed to delete product:', error)
       showError(`Failed to delete product: ${error.response?.data?.message || error.message}`)
@@ -421,32 +429,32 @@ const AdminProducts = () => {
 
   const handleAddSubmit = async (e) => {
     e.preventDefault()
-    
+
     const requiredFields = ['title', 'price', 'category']
     const missingFields = requiredFields.filter(field => !newProduct[field])
-    
+
     if (missingFields.length > 0) {
       showError(`Please fill in all required fields: ${missingFields.join(', ')}`)
       return
     }
-    
+
     if (!selectedImages || selectedImages.length === 0) {
       showError('Please select at least one image')
       return
     }
-    
+
     try {
       setIsSubmitting(true)
-      
+
       // Create FormData
       const formDataToSend = new FormData()
-      
+
       // Basic required fields
       formDataToSend.append('title', newProduct.title.trim())
       formDataToSend.append('description', (newProduct.description || '').trim())
       formDataToSend.append('price', newProduct.price.toString())
       formDataToSend.append('stock', newProduct.stock ? newProduct.stock.toString() : '0')
-      
+
       // Handle category - if it's from our minimal list, we need to handle it differently
       // Check if category is from our minimal list (no underscore in ID)
       if (newProduct.category && !newProduct.category.includes('_')) {
@@ -455,37 +463,48 @@ const AdminProducts = () => {
       } else {
         formDataToSend.append('category', newProduct.category)
       }
-      
+
       formDataToSend.append('published', 'true')
       formDataToSend.append('approved', 'true')
-      
+
+      // Wholesale pricing
+      formDataToSend.append('allowWholesale', newProduct.allowWholesale ? 'true' : 'false')
+      if (newProduct.allowWholesale) {
+        if (newProduct.wholesalePrice) {
+          formDataToSend.append('wholesalePrice', newProduct.wholesalePrice.toString())
+        }
+        if (newProduct.minWholesaleQuantity) {
+          formDataToSend.append('minWholesaleQuantity', newProduct.minWholesaleQuantity.toString())
+        }
+      }
+
       if (newProduct.sku && newProduct.sku.trim()) {
         formDataToSend.append('sku', newProduct.sku.trim().toUpperCase())
       }
-      
+
       selectedImages.forEach((imageFile) => {
         if (imageFile instanceof File) {
           formDataToSend.append('images', imageFile)
         }
       })
-      
+
       console.log('Sending product data...')
-      
+
       const response = await productService.createProduct(formDataToSend)
-      
+
       showSuccess('Product created successfully!')
-      
+
       resetForm()
       setShowAddModal(false)
       fetchProducts()
-      
+
     } catch (error) {
       console.error('Product creation error:', error)
-      
+
       // Handle 400 error specifically
       if (error.response?.status === 400) {
         const errorData = error.response.data
-        
+
         if (errorData.message === 'Category not found') {
           showError('Category not found. Please create the category first in the Categories section.')
         } else if (errorData.message) {
@@ -534,21 +553,21 @@ const AdminProducts = () => {
   // Edit Form Functions
   const validateEditForm = () => {
     const newErrors = {}
-    
+
     if (!formData.title.trim()) newErrors.title = 'Title is required'
     if (!formData.price || parseFloat(formData.price) <= 0) newErrors.price = 'Valid price is required'
     if (!formData.category) newErrors.category = 'Category is required'
     if (formData.stock && parseInt(formData.stock) < 0) newErrors.stock = 'Stock cannot be negative'
-    
+
     // Validate comparePrice is a valid number if provided
     if (formData.comparePrice && formData.comparePrice.trim() !== '') {
       if (isNaN(parseFloat(formData.comparePrice)) || parseFloat(formData.comparePrice) < 0) {
         newErrors.comparePrice = 'Compare price must be a valid number'
       }
     }
-    
+
     setErrors(newErrors)
-    
+
     // Show validation errors as toasts
     if (Object.keys(newErrors).length > 0) {
       Object.values(newErrors).forEach(error => {
@@ -556,13 +575,13 @@ const AdminProducts = () => {
       })
       return false
     }
-    
+
     return true
   }
 
   const handleEditInputChange = (e) => {
     const { name, value } = e.target
-    
+
     if (name.includes('.')) {
       const [parent, child] = name.split('.')
       setFormData(prev => ({
@@ -577,7 +596,7 @@ const AdminProducts = () => {
         ...prev,
         [name]: value
       }))
-      
+
       if (errors[name]) {
         setErrors(prev => ({ ...prev, [name]: undefined }))
       }
@@ -610,7 +629,7 @@ const AdminProducts = () => {
   const updateSpecification = (index, field, value) => {
     setFormData(prev => ({
       ...prev,
-      specifications: prev.specifications.map((spec, i) => 
+      specifications: prev.specifications.map((spec, i) =>
         i === index ? { ...spec, [field]: value } : spec
       )
     }))
@@ -626,33 +645,33 @@ const AdminProducts = () => {
 
   const handleEditSubmit = async (e) => {
     e.preventDefault()
-    
+
     if (!validateEditForm()) {
       return
     }
-    
+
     try {
       setSaving(true)
-      
+
       const formDataToSend = new FormData()
-      
+
       formDataToSend.append('title', formData.title.trim())
       formDataToSend.append('description', formData.description.trim())
       formDataToSend.append('price', formData.price.toString())
       formDataToSend.append('stock', formData.stock ? formData.stock.toString() : '0')
-      
+
       // Handle category
       if (formData.category && !formData.category.includes('_')) {
         formDataToSend.append('category', formData.category)
       } else {
         formDataToSend.append('category', formData.category)
       }
-      
+
       formDataToSend.append('published', formData.published.toString())
       formDataToSend.append('approved', formData.approved.toString())
-      
+
       if (formData.sku.trim()) formDataToSend.append('sku', formData.sku.trim().toUpperCase())
-      
+
       // Validate and append comparePrice
       if (formData.comparePrice && formData.comparePrice.trim() !== '') {
         const comparePriceValue = parseFloat(formData.comparePrice)
@@ -660,21 +679,21 @@ const AdminProducts = () => {
           formDataToSend.append('comparePrice', comparePriceValue.toString())
         }
       }
-      
+
       if (formData.discount) {
         const discountValue = parseFloat(formData.discount)
         if (!isNaN(discountValue) && discountValue >= 0 && discountValue <= 100) {
           formDataToSend.append('discount', discountValue.toString())
         }
       }
-      
+
       if (formData.weight) {
         const weightValue = parseFloat(formData.weight)
         if (!isNaN(weightValue) && weightValue >= 0) {
           formDataToSend.append('weight', weightValue.toString())
         }
       }
-      
+
       const dimensions = {}
       if (formData.dimensions.length) {
         const lengthValue = parseFloat(formData.dimensions.length)
@@ -688,60 +707,60 @@ const AdminProducts = () => {
         const heightValue = parseFloat(formData.dimensions.height)
         if (!isNaN(heightValue) && heightValue >= 0) dimensions.height = heightValue.toString()
       }
-      
+
       if (Object.keys(dimensions).length > 0) {
         formDataToSend.append('dimensions', JSON.stringify(dimensions))
       }
-      
+
       if (formData.specifications.length > 0) {
         const validSpecs = formData.specifications.filter(spec => spec.key.trim() && spec.value.trim())
         if (validSpecs.length > 0) {
           formDataToSend.append('specifications', JSON.stringify(validSpecs))
         }
       }
-      
+
       if (formData.tags.trim()) {
         const tagsArray = formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag)
         formDataToSend.append('tags', JSON.stringify(tagsArray))
       }
-      
+
       const seoData = {}
       if (formData.metaTitle.trim()) seoData.title = formData.metaTitle.trim()
       if (formData.metaDescription.trim()) seoData.description = formData.metaDescription.trim()
-      
+
       if (Object.keys(seoData).length > 0) {
         formDataToSend.append('seo', JSON.stringify(seoData))
       }
-      
+
       if (imagesToRemove.length > 0) {
         formDataToSend.append('removeImages', JSON.stringify(imagesToRemove))
       }
-      
+
       newImages.forEach(imageFile => {
         if (imageFile instanceof File) {
           formDataToSend.append('images', imageFile)
         }
       })
-      
+
       const response = await productService.updateProduct(id, formDataToSend)
-      
+
       showSuccess('Product updated successfully!')
-      
+
       setTimeout(() => {
         fetchEditProduct()
         setNewImages([])
         setImagesToRemove([])
       }, 1000)
-      
+
     } catch (error) {
       console.error('Update error:', error)
-      
+
       // Parse and show detailed error messages
       if (error.response?.data) {
         if (error.response.data.message) {
           showError(`Error: ${error.response.data.message}`)
         }
-        
+
         if (error.response.data.errors) {
           // Handle validation errors from server
           Object.entries(error.response.data.errors).forEach(([field, message]) => {
@@ -827,7 +846,7 @@ const AdminProducts = () => {
               <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
               Back to Products
             </button>
-            
+
             <div className="bg-white rounded-2xl shadow-sm p-6 mb-6 border border-gray-100">
               <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                 <div>
@@ -882,7 +901,7 @@ const AdminProducts = () => {
                     <p className="text-sm text-gray-500">Essential product details</p>
                   </div>
                 </div>
-                
+
                 <div className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
@@ -896,9 +915,8 @@ const AdminProducts = () => {
                           name="title"
                           value={formData.title}
                           onChange={handleEditInputChange}
-                          className={`w-full px-4 py-3 pl-11 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${
-                            errors.title ? 'border-red-300 bg-red-50' : 'border-gray-300 hover:border-gray-400'
-                          }`}
+                          className={`w-full px-4 py-3 pl-11 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${errors.title ? 'border-red-300 bg-red-50' : 'border-gray-300 hover:border-gray-400'
+                            }`}
                           placeholder="Enter product title"
                         />
                         <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
@@ -944,9 +962,8 @@ const AdminProducts = () => {
                           name="price"
                           value={formData.price}
                           onChange={handleEditInputChange}
-                          className={`w-full px-4 py-3 pl-11 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${
-                            errors.price ? 'border-red-300 bg-red-50' : 'border-gray-300 hover:border-gray-400'
-                          }`}
+                          className={`w-full px-4 py-3 pl-11 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${errors.price ? 'border-red-300 bg-red-50' : 'border-gray-300 hover:border-gray-400'
+                            }`}
                           placeholder="0.00"
                           step="0.01"
                           min="0"
@@ -974,9 +991,8 @@ const AdminProducts = () => {
                           name="comparePrice"
                           value={formData.comparePrice}
                           onChange={handleEditInputChange}
-                          className={`w-full px-4 py-3 pl-11 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${
-                            errors.comparePrice ? 'border-red-300 bg-red-50' : 'border-gray-300 hover:border-gray-400'
-                          }`}
+                          className={`w-full px-4 py-3 pl-11 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${errors.comparePrice ? 'border-red-300 bg-red-50' : 'border-gray-300 hover:border-gray-400'
+                            }`}
                           placeholder="0.00"
                           step="0.01"
                           min="0"
@@ -1001,9 +1017,8 @@ const AdminProducts = () => {
                           name="stock"
                           value={formData.stock}
                           onChange={handleEditInputChange}
-                          className={`w-full px-4 py-3 pl-11 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${
-                            errors.stock ? 'border-red-300 bg-red-50' : 'border-gray-300 hover:border-gray-400'
-                          }`}
+                          className={`w-full px-4 py-3 pl-11 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${errors.stock ? 'border-red-300 bg-red-50' : 'border-gray-300 hover:border-gray-400'
+                            }`}
                           placeholder="0"
                           min="0"
                         />
@@ -1029,9 +1044,8 @@ const AdminProducts = () => {
                           name="category"
                           value={formData.category}
                           onChange={handleEditInputChange}
-                          className={`w-full px-4 py-3 pl-11 border rounded-xl appearance-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${
-                            errors.category ? 'border-red-300 bg-red-50' : 'border-gray-300 hover:border-gray-400'
-                          }`}
+                          className={`w-full px-4 py-3 pl-11 border rounded-xl appearance-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${errors.category ? 'border-red-300 bg-red-50' : 'border-gray-300 hover:border-gray-400'
+                            }`}
                         >
                           <option value="">Select Category</option>
                           {categories.map(category => (
@@ -1083,7 +1097,7 @@ const AdminProducts = () => {
                     <p className="text-sm text-gray-500">Add product specifications and details</p>
                   </div>
                 </div>
-                
+
                 <div className="space-y-4">
                   {formData.specifications.map((spec, index) => (
                     <div key={index} className="flex gap-3 items-center p-4 bg-gray-50 rounded-xl">
@@ -1115,7 +1129,7 @@ const AdminProducts = () => {
                       </button>
                     </div>
                   ))}
-                  
+
                   <button
                     type="button"
                     onClick={addSpecification}
@@ -1237,14 +1251,13 @@ const AdminProducts = () => {
                   <Shield className="h-5 w-5 text-blue-500" />
                   Product Status
                 </h3>
-                
+
                 <div className="space-y-6">
                   <div>
                     <label className="flex items-center justify-between p-4 bg-gray-50 rounded-xl cursor-pointer hover:bg-gray-100 transition-colors">
                       <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                          formData.published ? 'bg-green-100' : 'bg-gray-100'
-                        }`}>
+                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${formData.published ? 'bg-green-100' : 'bg-gray-100'
+                          }`}>
                           {formData.published ? (
                             <EyeOpen className="h-5 w-5 text-green-600" />
                           ) : (
@@ -1263,12 +1276,10 @@ const AdminProducts = () => {
                           onChange={(e) => setFormData(prev => ({ ...prev, published: e.target.checked }))}
                           className="sr-only"
                         />
-                        <div className={`w-12 h-6 rounded-full transition-all duration-300 ${
-                          formData.published ? 'bg-green-500' : 'bg-gray-300'
-                        }`}>
-                          <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all duration-300 ${
-                            formData.published ? 'left-7' : 'left-1'
-                          }`}></div>
+                        <div className={`w-12 h-6 rounded-full transition-all duration-300 ${formData.published ? 'bg-green-500' : 'bg-gray-300'
+                          }`}>
+                          <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all duration-300 ${formData.published ? 'left-7' : 'left-1'
+                            }`}></div>
                         </div>
                       </div>
                     </label>
@@ -1277,9 +1288,8 @@ const AdminProducts = () => {
                   <div>
                     <label className="flex items-center justify-between p-4 bg-gray-50 rounded-xl cursor-pointer hover:bg-gray-100 transition-colors">
                       <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                          formData.approved ? 'bg-green-100' : 'bg-yellow-100'
-                        }`}>
+                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${formData.approved ? 'bg-green-100' : 'bg-yellow-100'
+                          }`}>
                           {formData.approved ? (
                             <CheckCircle className="h-5 w-5 text-green-600" />
                           ) : (
@@ -1298,12 +1308,10 @@ const AdminProducts = () => {
                           onChange={(e) => setFormData(prev => ({ ...prev, approved: e.target.checked }))}
                           className="sr-only"
                         />
-                        <div className={`w-12 h-6 rounded-full transition-all duration-300 ${
-                          formData.approved ? 'bg-green-500' : 'bg-yellow-500'
-                        }`}>
-                          <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all duration-300 ${
-                            formData.approved ? 'left-7' : 'left-1'
-                          }`}></div>
+                        <div className={`w-12 h-6 rounded-full transition-all duration-300 ${formData.approved ? 'bg-green-500' : 'bg-yellow-500'
+                          }`}>
+                          <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all duration-300 ${formData.approved ? 'left-7' : 'left-1'
+                            }`}></div>
                         </div>
                       </div>
                     </label>
@@ -1317,7 +1325,7 @@ const AdminProducts = () => {
                   <Ruler className="h-5 w-5 text-blue-500" />
                   Additional Details
                 </h3>
-                
+
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Weight</label>
@@ -1389,7 +1397,7 @@ const AdminProducts = () => {
                   <Globe className="h-5 w-5 text-blue-500" />
                   SEO Settings
                 </h3>
-                
+
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Meta Title</label>
@@ -1420,7 +1428,7 @@ const AdminProducts = () => {
               {/* Dimensions Card */}
               <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
                 <h3 className="text-lg font-bold text-gray-900 mb-6">Dimensions (cm)</h3>
-                
+
                 <div className="grid grid-cols-3 gap-3">
                   <div>
                     <label className="block text-xs text-gray-500 mb-1">Length</label>
@@ -1684,7 +1692,7 @@ const AdminProducts = () => {
               </div>
               <h3 className="text-xl font-bold text-gray-900 mb-2">No products found</h3>
               <p className="text-gray-600 mb-6 max-w-md">
-                {searchTerm || Object.values(filters).some(f => f) 
+                {searchTerm || Object.values(filters).some(f => f)
                   ? "Try adjusting your search or filters"
                   : "Get started by adding your first product"
                 }
@@ -1775,13 +1783,12 @@ const AdminProducts = () => {
                             <div className="font-bold text-gray-900 text-lg">
                               {formatPrice(product.price)}
                             </div>
-                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
-                              product.stock > 10 
-                                ? 'bg-green-100 text-green-800'
-                                : product.stock > 0
+                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${product.stock > 10
+                              ? 'bg-green-100 text-green-800'
+                              : product.stock > 0
                                 ? 'bg-yellow-100 text-yellow-800'
                                 : 'bg-red-100 text-red-800'
-                            }`}>
+                              }`}>
                               <Layers className="h-3 w-3 mr-1" />
                               {product.stock || 0} in stock
                             </span>
@@ -1792,11 +1799,10 @@ const AdminProducts = () => {
                             <button
                               onClick={() => handleApprove(product._id, product.approved)}
                               disabled={actionLoading[product._id]}
-                              className={`inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${
-                                product.approved 
-                                  ? 'bg-green-100 text-green-800 hover:bg-green-200' 
-                                  : 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
-                              } ${actionLoading[product._id] ? 'opacity-50 cursor-not-allowed' : ''}`}
+                              className={`inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${product.approved
+                                ? 'bg-green-100 text-green-800 hover:bg-green-200'
+                                : 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
+                                } ${actionLoading[product._id] ? 'opacity-50 cursor-not-allowed' : ''}`}
                             >
                               {product.approved ? (
                                 <>
@@ -1813,11 +1819,10 @@ const AdminProducts = () => {
                             <button
                               onClick={() => handlePublishToggle(product._id, product.published)}
                               disabled={actionLoading[product._id]}
-                              className={`inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${
-                                product.published
-                                  ? 'bg-blue-100 text-blue-800 hover:bg-blue-200'
-                                  : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
-                              } ${actionLoading[product._id] ? 'opacity-50 cursor-not-allowed' : ''}`}
+                              className={`inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${product.published
+                                ? 'bg-blue-100 text-blue-800 hover:bg-blue-200'
+                                : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                                } ${actionLoading[product._id] ? 'opacity-50 cursor-not-allowed' : ''}`}
                             >
                               {product.published ? (
                                 <>
@@ -1915,12 +1920,12 @@ const AdminProducts = () => {
                 </div>
                 <h2 className="text-xl font-bold text-gray-900">Confirm Delete</h2>
               </div>
-              
+
               <p className="text-gray-600 mb-6">
                 Are you sure you want to delete <strong className="text-gray-900">"{selectedProduct.title}"</strong>?
                 This action cannot be undone and will permanently remove the product.
               </p>
-              
+
               <div className="flex gap-3 justify-end">
                 <button
                   onClick={() => {
@@ -2025,6 +2030,64 @@ const AdminProducts = () => {
                     </div>
                   </div>
 
+                  {/* Wholesale Pricing Section */}
+                  <div className="border-t border-gray-200 pt-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-800">Wholesale Pricing</h3>
+                        <p className="text-sm text-gray-500">Enable wholesale pricing for bulk orders</p>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          name="allowWholesale"
+                          checked={newProduct.allowWholesale}
+                          onChange={(e) => setNewProduct({ ...newProduct, allowWholesale: e.target.checked })}
+                          className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                      </label>
+                    </div>
+
+                    {newProduct.allowWholesale && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            Wholesale Price <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="number"
+                            name="wholesalePrice"
+                            value={newProduct.wholesalePrice}
+                            onChange={handleAddInputChange}
+                            className="w-full px-4 py-3 border border-gray-300 rounded-xl hover:border-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                            step="0.01"
+                            min="0"
+                            required={newProduct.allowWholesale}
+                            placeholder="0.00"
+                          />
+                          <p className="text-xs text-gray-500 mt-1">Price per unit for wholesale orders</p>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            Minimum Wholesale Quantity <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="number"
+                            name="minWholesaleQuantity"
+                            value={newProduct.minWholesaleQuantity}
+                            onChange={handleAddInputChange}
+                            className="w-full px-4 py-3 border border-gray-300 rounded-xl hover:border-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                            min="1"
+                            required={newProduct.allowWholesale}
+                            placeholder="10"
+                          />
+                          <p className="text-xs text-gray-500 mt-1">Minimum quantity to qualify for wholesale price</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -2048,6 +2111,9 @@ const AdminProducts = () => {
                         If categories don't load, please create categories first in the Categories section.
                       </p>
                     </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-2">
                         SKU
@@ -2061,6 +2127,9 @@ const AdminProducts = () => {
                         placeholder="Optional SKU"
                       />
                     </div>
+                    <div>
+                      {/* Empty div for grid alignment */}
+                    </div>
                   </div>
 
                   <div>
@@ -2072,7 +2141,7 @@ const AdminProducts = () => {
                         <Upload className="h-8 w-8 text-blue-500" />
                       </div>
                       <p className="text-gray-600 font-medium mb-2">
-                        {selectedImages.length > 0 
+                        {selectedImages.length > 0
                           ? `${selectedImages.length} image(s) selected`
                           : "Drag & drop images here"
                         }
