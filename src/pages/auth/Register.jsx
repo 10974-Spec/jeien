@@ -1,19 +1,25 @@
 import React, { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
 import { ArrowLeft, ShoppingBag, UserPlus } from 'lucide-react'
 
 const Register = () => {
   const navigate = useNavigate()
-  const { register } = useAuth()
-  
+  const { register, isAuthenticated, user } = useAuth()
+
+  const location = useLocation()
+
+  // Get role from query params if available
+  const searchParams = new URLSearchParams(location.search)
+  const initialRole = searchParams.get('role') === 'VENDOR' ? 'VENDOR' : 'BUYER'
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     password: '',
     confirmPassword: '',
     phone: '',
-    role: 'BUYER',
+    role: initialRole,
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -88,6 +94,20 @@ const Register = () => {
               <p className="text-gray-600 mt-2">Join JEIEN Premium Marketplace and start shopping today</p>
             </div>
           </div>
+
+          {isAuthenticated && formData.role === 'VENDOR' && (
+            <div className="mb-6 p-4 bg-blue-50 border border-blue-100 rounded-xl flex items-start gap-3">
+              <div className="flex-shrink-0 mt-0.5">
+                <svg className="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div className="text-sm text-blue-700">
+                <p className="font-medium mb-1">Creating a Vendor Account</p>
+                <p>You are currently logged in as <strong>{user?.name}</strong>. creating a vendor account will create a <strong>new</strong> separate account. You will need to use a different email address.</p>
+              </div>
+            </div>
+          )}
 
           {error && (
             <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-xl">
@@ -349,12 +369,12 @@ const Register = () => {
                 Premium Marketplace
               </p>
             </div>
-            
+
             <div className="space-y-6 mt-12">
               <h2 className="text-3xl font-bold text-gray-800">
                 Join thousands of happy customers
               </h2>
-              
+
               <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white/20">
                 <p className="text-lg text-gray-700">
                   "Creating an account with JEIEN was the best decision. Now I can shop securely and track all my orders in one place!"

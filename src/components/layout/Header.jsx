@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Search, ShoppingCart, Heart, User, Menu, MapPin, ChevronDown, Phone, LogOut } from "lucide-react";
+import { Search, ShoppingCart, Heart, User, Menu, MapPin, ChevronDown, Phone, LogOut, UserPlus } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
 import { useCart } from "../../hooks/useCart";
 import { useWishlist } from "../../hooks/useWishlist";
@@ -301,6 +301,25 @@ export const Header = () => {
                             <ShoppingCart className="h-4 w-4" />
                             My Orders
                           </Link>
+                          {user?.role !== 'vendor' && (
+                            <Link
+                              to="/register?role=VENDOR"
+                              className="flex items-center gap-2 px-3 py-2 text-sm text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-md transition-colors font-medium border border-blue-100"
+                              onClick={() => {
+                                setIsProfileMenuOpen(false);
+                                // Optional: Logout before redirecting since they need a new account
+                                // handleLogout(); 
+                                // For now, we let them see the register page which might redirect if already logged in, 
+                                // but our Register page doesn't seem to force redirect if logged in, just shows form.
+                                // If Register page redirects logged in users, we might need to logout first.
+                                // Let's check Register.jsx behavior. 
+                                // Register.jsx doesn't seem to have a "redirect if logged in" check at the top.
+                              }}
+                            >
+                              <UserPlus className="h-4 w-4" />
+                              Become a Vendor
+                            </Link>
+                          )}
                           {user?.role === 'vendor' && (
                             <Link
                               to="/vendor"
@@ -456,6 +475,20 @@ export const Header = () => {
               ))}
             </div>
 
+            {/* Become a Vendor Button - Main Nav */}
+            {isAuthenticated && user?.role !== 'vendor' && (
+              <Button
+                variant="ghost"
+                className="rounded-none h-12 px-4 text-blue-600 hover:text-blue-800 hover:bg-blue-50 flex items-center gap-2 font-medium"
+                asChild
+              >
+                <Link to="/register?role=VENDOR">
+                  <UserPlus className="h-4 w-4" />
+                  Become a Vendor
+                </Link>
+              </Button>
+            )}
+
             <Link to="/search?deals=true" className="ml-auto flex items-center gap-2 text-sm hover:opacity-80 transition-opacity">
               <Badge className="bg-gradient-to-r from-blue-700 to-blue-800 text-white">
                 🔥 Hot Deals
@@ -538,6 +571,19 @@ export const Header = () => {
                       My Wishlist {wishlistCount > 0 && `(${wishlistCount})`}
                     </Link>
                   </Button>
+                  {user?.role !== 'vendor' && (
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 font-medium"
+                      asChild
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      <Link to="/register?role=VENDOR">
+                        <UserPlus className="h-4 w-4 mr-2" />
+                        Become a Vendor
+                      </Link>
+                    </Button>
+                  )}
                   {user?.role === 'vendor' && (
                     <Button
                       variant="ghost"
