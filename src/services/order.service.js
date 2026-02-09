@@ -62,6 +62,15 @@ const orderService = {
   },
 
   /**
+   * Get all orders (admin only)
+   * @param {Object} params - Query parameters
+   */
+  getAllOrders: (params = {}) => {
+    console.log('Getting all orders with params:', params)
+    return api.get('/orders/admin/all', { params })
+  },
+
+  /**
    * Track order by order ID
    * @param {string} orderId - Order tracking ID
    */
