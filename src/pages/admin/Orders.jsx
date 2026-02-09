@@ -305,6 +305,38 @@ const AdminOrders = () => {
                   </div>
                 </div>
               )}
+
+              {/* Commission Breakdown */}
+              {selectedOrder.commissionDetails && (
+                <div className="mt-6">
+                  <h3 className="text-lg font-semibold mb-3">Commission Breakdown</h3>
+                  <div className="bg-blue-50 p-4 rounded space-y-2">
+                    <div className="flex justify-between">
+                      <span className="font-medium">Order Total:</span>
+                      <span className="font-semibold">KES {selectedOrder.totalAmount}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span>Commission Rate:</span>
+                      <span>{selectedOrder.commissionDetails.rate}%</span>
+                    </div>
+                    <div className="flex justify-between text-sm border-t pt-2">
+                      <span>Admin Commission ({selectedOrder.commissionDetails.rate}%):</span>
+                      <span className="text-red-600 font-medium">KES {selectedOrder.commissionDetails.adminAmount}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span>Vendor Payout ({100 - selectedOrder.commissionDetails.rate}%):</span>
+                      <span className="text-green-600 font-medium">KES {selectedOrder.commissionDetails.vendorAmount}</span>
+                    </div>
+                    {selectedOrder.commissionDetails.processed && (
+                      <div className="mt-3 pt-3 border-t">
+                        <p className="text-xs text-green-600">
+                          ✓ Commission processed on {new Date(selectedOrder.commissionDetails.processedAt).toLocaleString()}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
