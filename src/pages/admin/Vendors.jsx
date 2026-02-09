@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import vendorService from '../../services/vendor.service'
 
 const AdminVendors = () => {
@@ -128,8 +129,8 @@ const AdminVendors = () => {
                         <button
                           onClick={() => handleStatusChange(vendor._id, !vendor.active)}
                           className={`px-3 py-1 text-sm rounded ${vendor.active
-                              ? 'bg-red-100 text-red-800 hover:bg-red-200'
-                              : 'bg-green-100 text-green-800 hover:bg-green-200'
+                            ? 'bg-red-100 text-red-800 hover:bg-red-200'
+                            : 'bg-green-100 text-green-800 hover:bg-green-200'
                             }`}
                         >
                           {vendor.active ? 'Deactivate' : 'Activate'}
@@ -137,8 +138,8 @@ const AdminVendors = () => {
                         <button
                           onClick={() => handleVerification(vendor._id, !vendor.verified)}
                           className={`px-3 py-1 text-sm rounded ${vendor.verified
-                              ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
-                              : 'bg-blue-100 text-blue-800 hover:bg-blue-200'
+                            ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
+                            : 'bg-blue-100 text-blue-800 hover:bg-blue-200'
                             }`}
                         >
                           {vendor.verified ? 'Unverify' : 'Verify'}
