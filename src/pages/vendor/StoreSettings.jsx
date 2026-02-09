@@ -43,7 +43,7 @@ const VendorStoreSettings = () => {
       setLoading(true)
       const response = await vendorService.getVendorStore()
       const vendor = response.data.vendor
-      
+
       if (vendor) {
         setStoreInfo({
           storeName: vendor.storeName || '',
@@ -62,7 +62,7 @@ const VendorStoreSettings = () => {
         })
       }
     } catch (error) {
-      console.error('Failed to fetch store data:', error)
+      // Error handled silently
     } finally {
       setLoading(false)
     }
@@ -114,7 +114,6 @@ const VendorStoreSettings = () => {
       await vendorService.updateVendorStore(storeInfo)
       alert('Store information updated successfully!')
     } catch (error) {
-      console.error('Failed to update store info:', error)
       alert('Failed to update store information')
     } finally {
       setSaving(false)
@@ -128,7 +127,6 @@ const VendorStoreSettings = () => {
       await vendorService.updateBankDetails(bankDetails)
       alert('Bank details updated successfully!')
     } catch (error) {
-      console.error('Failed to update bank details:', error)
       alert('Failed to update bank details')
     } finally {
       setSaving(false)
@@ -141,13 +139,12 @@ const VendorStoreSettings = () => {
       const formData = new FormData()
       if (logoFile) formData.append('logo', logoFile)
       if (bannerFile) formData.append('banner', bannerFile)
-      
+
       await vendorService.updateStoreImages(formData)
       setLogoFile(null)
       setBannerFile(null)
       alert('Store images updated successfully!')
     } catch (error) {
-      console.error('Failed to upload images:', error)
       alert('Failed to upload images')
     } finally {
       setSaving(false)
@@ -166,6 +163,27 @@ const VendorStoreSettings = () => {
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-gray-800">Store Settings</h1>
 
+      {/* Commission Information Banner */}
+      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-l-4 border-blue-500 p-5 rounded-lg shadow-sm">
+        <div className="flex items-start">
+          <svg className="w-6 h-6 text-blue-600 mt-0.5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <div>
+            <h4 className="font-bold text-blue-900 mb-2">Platform Commission Structure</h4>
+            <p className="text-sm text-blue-800 mb-2">
+              All vendor sales are subject to a <strong>10% platform commission</strong>. This means:
+            </p>
+            <ul className="text-sm text-blue-800 space-y-1 ml-4">
+              <li>• <strong>90%</strong> of each sale is paid directly to your M-Pesa account</li>
+              <li>• <strong>10%</strong> goes to platform fees for hosting, payment processing, and support</li>
+              <li>• Payouts are processed automatically within 24-48 hours after order delivery</li>
+              <li>• Make sure your M-Pesa number below is correct to receive payments</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
       <div className="bg-white p-6 rounded-lg shadow">
         <h3 className="text-lg font-bold mb-4">Store Information</h3>
         <form onSubmit={handleStoreInfoSubmit} className="space-y-4">
@@ -180,7 +198,7 @@ const VendorStoreSettings = () => {
               required
             />
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium mb-1">Store Description</label>
             <textarea

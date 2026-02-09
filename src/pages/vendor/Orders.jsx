@@ -19,11 +19,11 @@ const VendorOrders = () => {
       const params = {}
       if (filters.status) params.status = filters.status
       if (filters.search) params.search = filters.search
-      
+
       const response = await orderService.getMyOrders(params)
       setOrders(response.data.orders || [])
     } catch (error) {
-      console.error('Failed to fetch orders:', error)
+      // Error handled silently
     } finally {
       setLoading(false)
     }
@@ -34,7 +34,7 @@ const VendorOrders = () => {
       await orderService.updateOrderStatus(orderId, { status: newStatus })
       fetchOrders()
     } catch (error) {
-      console.error('Failed to update order status:', error)
+      alert('Failed to update order status')
     }
   }
 
@@ -129,11 +129,10 @@ const VendorOrders = () => {
                     <span className={`px-3 py-1 rounded text-sm ${getStatusColor(order.status)}`}>
                       {order.status}
                     </span>
-                    <span className={`px-3 py-1 rounded text-sm ${
-                      order.paymentStatus === 'COMPLETED' 
-                        ? 'bg-green-100 text-green-800' 
-                        : 'bg-yellow-100 text-yellow-800'
-                    }`}>
+                    <span className={`px-3 py-1 rounded text-sm ${order.paymentStatus === 'COMPLETED'
+                      ? 'bg-green-100 text-green-800'
+                      : 'bg-yellow-100 text-yellow-800'
+                      }`}>
                       Payment: {order.paymentStatus}
                     </span>
                   </div>

@@ -15,10 +15,6 @@ class ErrorBoundary extends React.Component {
   }
 
   componentDidCatch(error, errorInfo) {
-    console.error('=== ERROR BOUNDARY CAUGHT ERROR ===')
-    console.error('Error:', error)
-    console.error('Error Info:', errorInfo)
-    console.error('Component Stack:', errorInfo.componentStack)
     this.setState({ error, errorInfo })
   }
 
@@ -27,13 +23,7 @@ class ErrorBoundary extends React.Component {
       return (
         <div className="p-6 bg-red-50 border border-red-200 rounded">
           <h2 className="text-xl font-bold text-red-800 mb-2">Something went wrong</h2>
-          <details className="mt-4">
-            <summary className="cursor-pointer text-red-600">Error Details</summary>
-            <pre className="mt-2 text-sm bg-white p-4 rounded overflow-auto">
-              {this.state.error && this.state.error.toString()}
-              {this.state.errorInfo && this.state.errorInfo.componentStack}
-            </pre>
-          </details>
+          <p className="text-red-600">Please refresh the page and try again.</p>
         </div>
       )
     }
@@ -48,7 +38,6 @@ const VendorProducts = () => {
   const [showForm, setShowForm] = useState(false)
   const [submitError, setSubmitError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [debugLogs, setDebugLogs] = useState([])
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -60,35 +49,18 @@ const VendorProducts = () => {
   const [selectedImages, setSelectedImages] = useState([])
   const [categories, setCategories] = useState([])
 
-  // Helper to add debug logs
-  const addLog = (message, data = null) => {
-    const timestamp = new Date().toLocaleTimeString()
-    const logEntry = { timestamp, message, data }
-    console.log(`[${timestamp}] ${message}`, data || '')
-    setDebugLogs(prev => [...prev, logEntry])
-  }
-
   useEffect(() => {
-    console.log('=== COMPONENT MOUNTED ===')
-    addLog('Component mounted, fetching data...')
     fetchProducts()
     fetchCategories()
   }, [])
 
   const fetchProducts = async () => {
     try {
-      addLog('Fetching products...')
       setLoading(true)
       const response = await productService.getVendorProducts({})
-      addLog('Products fetched successfully', response.data)
       setProducts(response.data.products || [])
     } catch (error) {
-      addLog('ERROR fetching products', {
-        message: error.message,
-        response: error.response?.data,
-        stack: error.stack
-      })
-      console.error('Failed to fetch products:', error)
+      setSubmitError('Failed to fetch products')
     } finally {
       setLoading(false)
     }
@@ -96,54 +68,23 @@ const VendorProducts = () => {
 
   const fetchCategories = async () => {
     try {
-      addLog('Fetching categories from API...')
       const response = await categoryService.getAllCategories()
-      addLog('Categories fetched successfully', response.data)
       setCategories(response.data.categories || [])
     } catch (error) {
-      addLog('ERROR fetching categories', {
-        message: error.message,
-        response: error.response?.data,
-        stack: error.stack
-      })
-      console.error('Failed to fetch categories:', error)
-      // fallback to empty array to avoid crashing
       setCategories([])
     }
   }
 
   const handleImageChange = (e) => {
-    try {
-      addLog('Image input changed')
-      const files = Array.from(e.target.files)
-      addLog('Files selected', { count: files.length, files: files.map(f => ({ name: f.name, size: f.size, type: f.type })) })
-      setSelectedImages(files)
-    } catch (error) {
-      addLog('ERROR in handleImageChange', { message: error.message, stack: error.stack })
-      console.error('Error in handleImageChange:', error)
-    }
+    const files = Array.from(e.target.files)
+    setSelectedImages(files)
   }
 
   const handleSubmit = async (e) => {
-    console.log('=== HANDLE SUBMIT CALLED ===')
-    console.log('Event:', e)
-    console.log('Event type:', e.type)
-    
-    try {
-      addLog('SUBMIT HANDLER TRIGGERED')
-      
-      if (!e || typeof e.preventDefault !== 'function') {
-        addLog('ERROR: Invalid event object', e)
-        throw new Error('Invalid event object')
-      }
+    e.preventDefault()
 
-      e.preventDefault()
-      addLog('preventDefault called successfully')
-      
-      addLog('Form data at submit', formData)
-      addLog('Selected images at submit', { count: selectedImages.length, images: selectedImages.map(f => f.name) })
-      
-      // Detailed validation
+    try {
+      // Validation
       const validationErrors = []
       if (!formData.title) validationErrors.push('Title is required')
       if (!formData.price) validationErrors.push('Price is required')
@@ -153,219 +94,136 @@ const VendorProducts = () => {
       if (selectedImages.length === 0) validationErrors.push('At least one image is required')
 
       if (validationErrors.length > 0) {
-        const errorMsg = validationErrors.join(', ')
-        addLog('VALIDATION FAILED', validationErrors)
-        setSubmitError(errorMsg)
+        setSubmitError(validationErrors.join(', '))
         return
       }
 
-      addLog('Validation passed, starting submission...')
       setIsSubmitting(true)
       setSubmitError('')
 
       // Create FormData
-      addLog('Creating FormData object...')
       const productData = new FormData()
-      
       Object.keys(formData).forEach(key => {
-        addLog(`Appending field: ${key}`, formData[key])
         productData.append(key, formData[key])
       })
-      
-      selectedImages.forEach((image, index) => {
-        addLog(`Appending image ${index}`, { name: image.name, size: image.size })
+
+      selectedImages.forEach((image) => {
         productData.append('images', image)
       })
 
-      addLog('FormData created, checking productService...')
-      
-      if (!productService) {
-        throw new Error('productService is undefined')
-      }
-      if (!productService.createProduct) {
-        throw new Error('productService.createProduct is undefined')
-      }
+      await productService.createProduct(productData)
 
-      addLog('Calling productService.createProduct...')
-      
-      const response = await productService.createProduct(productData)
-      
-      addLog('Product created successfully!', response)
-      
       // Reset form
-      addLog('Resetting form...')
       setShowForm(false)
       setFormData({ title: '', description: '', price: '', stock: '', category: '', sku: '' })
       setSelectedImages([])
-      
-      addLog('Fetching updated products...')
       await fetchProducts()
-      
-      addLog('=== SUBMISSION COMPLETE ===')
-      
+
     } catch (error) {
-      addLog('=== SUBMISSION ERROR ===', {
-        message: error.message,
-        name: error.name,
-        stack: error.stack,
-        response: error.response?.data,
-        status: error.response?.status
-      })
-      console.error('Submit error:', error)
-      console.error('Error response:', error.response)
       setSubmitError(error.response?.data?.message || error.message || 'Failed to create product')
     } finally {
       setIsSubmitting(false)
-      addLog('isSubmitting set to false')
     }
   }
 
   const handleDelete = async (productId) => {
     if (window.confirm('Are you sure you want to delete this product?')) {
       try {
-        addLog('Deleting product', productId)
         await productService.deleteProduct(productId)
         await fetchProducts()
-        addLog('Product deleted successfully')
       } catch (error) {
-        addLog('ERROR deleting product', error)
-        console.error('Failed to delete product:', error)
+        alert('Failed to delete product')
       }
     }
   }
 
   const handleStockUpdate = async (productId, newStock) => {
     try {
-      addLog('Updating stock', { productId, newStock })
       await productService.updateStock(productId, { stock: newStock })
       await fetchProducts()
-      addLog('Stock updated successfully')
     } catch (error) {
-      addLog('ERROR updating stock', error)
-      console.error('Failed to update stock:', error)
+      alert('Failed to update stock')
     }
   }
 
   return (
     <ErrorBoundary>
       <div className="space-y-6">
-        {/* Debug Console */}
-        <div className="bg-gray-900 text-green-400 p-4 rounded-lg text-xs font-mono max-h-48 overflow-y-auto">
-          <div className="flex justify-between items-center mb-2">
-            <strong className="text-white">Debug Console</strong>
-            <button
-              onClick={() => setDebugLogs([])}
-              className="text-red-400 hover:text-red-300 text-xs"
-            >
-              Clear
-            </button>
-          </div>
-          {debugLogs.length === 0 ? (
-            <div className="text-gray-500">No logs yet...</div>
-          ) : (
-            debugLogs.map((log, i) => (
-              <div key={i} className="border-b border-gray-800 py-1">
-                <span className="text-gray-500">[{log.timestamp}]</span> {log.message}
-                {log.data && (
-                  <pre className="text-xs text-yellow-400 ml-4 mt-1">
-                    {JSON.stringify(log.data, null, 2)}
-                  </pre>
-                )}
-              </div>
-            ))
-          )}
-        </div>
-
         {/* Header & Add Button */}
         <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-gray-800">My Products</h1>
+          <h1 className="text-3xl font-bold text-gray-900">My Products</h1>
           <button
-            onClick={() => {
-              addLog('Add Product button clicked')
-              setShowForm(true)
-            }}
-            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+            onClick={() => setShowForm(true)}
+            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm font-medium"
           >
-            Add New Product
+            + Add New Product
           </button>
         </div>
 
         {/* Form */}
         {showForm && (
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h3 className="text-lg font-bold mb-4">Add New Product</h3>
-            
+          <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
+            <h3 className="text-xl font-bold mb-6 text-gray-900">Add New Product</h3>
+
             {submitError && (
-              <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+              <div className="mb-4 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg">
                 <strong>Error:</strong> {submitError}
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div>
-                  <label className="block text-sm font-medium mb-1">Product Title *</label>
+                  <label className="block text-sm font-semibold mb-2 text-gray-700">Product Title *</label>
                   <input
                     type="text"
                     value={formData.title}
-                    onChange={(e) => {
-                      addLog('Title changed', e.target.value)
-                      setFormData({ ...formData, title: e.target.value })
-                    }}
-                    className="w-full px-3 py-2 border rounded"
+                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">Price (KES) *</label>
+                  <label className="block text-sm font-semibold mb-2 text-gray-700">Price (KES) *</label>
                   <input
                     type="number"
                     value={formData.price}
-                    onChange={(e) => {
-                      addLog('Price changed', e.target.value)
-                      setFormData({ ...formData, price: e.target.value })
-                    }}
-                    className="w-full px-3 py-2 border rounded"
+                    onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     min="0"
                     step="0.01"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">Stock Quantity *</label>
+                  <label className="block text-sm font-semibold mb-2 text-gray-700">Stock Quantity *</label>
                   <input
                     type="number"
                     value={formData.stock}
-                    onChange={(e) => {
-                      addLog('Stock changed', e.target.value)
-                      setFormData({ ...formData, stock: e.target.value })
-                    }}
-                    className="w-full px-2 py-1 border rounded"
+                    onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     min="0"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">SKU</label>
+                  <label className="block text-sm font-semibold mb-2 text-gray-700">SKU</label>
                   <input
                     type="text"
                     value={formData.sku}
                     onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
-                    className="w-full px-3 py-2 border rounded"
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="Optional"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Category *</label>
+                <label className="block text-sm font-semibold mb-2 text-gray-700">Category *</label>
                 <select
                   value={formData.category}
-                  onChange={(e) => {
-                    addLog('Category changed', e.target.value)
-                    setFormData({ ...formData, category: e.target.value })
-                  }}
-                  className="w-full px-3 py-2 border rounded"
+                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   required
                 >
                   <option value="">Select Category</option>
@@ -376,59 +234,50 @@ const VendorProducts = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Description *</label>
+                <label className="block text-sm font-semibold mb-2 text-gray-700">Description *</label>
                 <textarea
                   value={formData.description}
-                  onChange={(e) => {
-                    addLog('Description changed', e.target.value.substring(0, 50) + '...')
-                    setFormData({ ...formData, description: e.target.value })
-                  }}
-                  className="w-full px-3 py-2 border rounded"
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   rows="4"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Product Images *</label>
+                <label className="block text-sm font-semibold mb-2 text-gray-700">Product Images *</label>
                 <input
                   type="file"
                   onChange={handleImageChange}
-                  className="w-full px-3 py-2 border rounded"
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   accept="image/*"
                   multiple
                   required
                 />
-                <p className="text-sm text-gray-500 mt-1">
+                <p className="text-sm text-gray-600 mt-2">
                   Upload up to 10 images. First image will be the main display image.
                   {selectedImages.length > 0 && (
-                    <span className="text-green-600 font-medium"> ({selectedImages.length} selected)</span>
+                    <span className="text-green-600 font-semibold ml-2">({selectedImages.length} selected)</span>
                   )}
                 </p>
               </div>
 
-              <div className="flex space-x-3">
+              <div className="flex space-x-3 pt-2">
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  onClick={(e) => {
-                    console.log('Button clicked!', e)
-                    addLog('Submit button CLICKED')
-                  }}
-                  className={`px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 ${
-                    isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
-                  }`}
+                  className={`px-6 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
+                    }`}
                 >
                   {isSubmitting ? 'Creating...' : 'Create Product'}
                 </button>
                 <button
                   type="button"
                   onClick={() => {
-                    addLog('Cancel clicked')
                     setShowForm(false)
                     setSubmitError('')
                   }}
-                  className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
+                  className="px-6 py-2.5 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors font-medium"
                   disabled={isSubmitting}
                 >
                   Cancel
@@ -439,68 +288,73 @@ const VendorProducts = () => {
         )}
 
         {/* Product Table */}
-        <div className="bg-white rounded-lg shadow overflow-hidden">
+        <div className="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200">
           {loading ? (
-            <div className="text-center py-8">Loading products...</div>
+            <div className="text-center py-12">
+              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              <p className="mt-2 text-gray-600">Loading products...</p>
+            </div>
           ) : products.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">No products found. Create your first product!</div>
+            <div className="text-center py-12 text-gray-500">
+              <p className="text-lg">No products found</p>
+              <p className="text-sm mt-1">Create your first product to get started!</p>
+            </div>
           ) : (
-            <table className="min-w-full">
-              <thead>
-                <tr className="bg-gray-50 border-b">
-                  <th className="text-left py-3 px-4">Product</th>
-                  <th className="text-left py-3 px-4">Price</th>
-                  <th className="text-left py-3 px-4">Stock</th>
-                  <th className="text-left py-3 px-4">Status</th>
-                  <th className="text-left py-3 px-4">Actions</th>
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="text-left py-4 px-6 text-sm font-semibold text-gray-700">Product</th>
+                  <th className="text-left py-4 px-6 text-sm font-semibold text-gray-700">Price</th>
+                  <th className="text-left py-4 px-6 text-sm font-semibold text-gray-700">Stock</th>
+                  <th className="text-left py-4 px-6 text-sm font-semibold text-gray-700">Status</th>
+                  <th className="text-left py-4 px-6 text-sm font-semibold text-gray-700">Actions</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="bg-white divide-y divide-gray-200">
                 {products.map((product) => (
-                  <tr key={product._id} className="border-b hover:bg-gray-50">
-                    <td className="py-4 px-4">
+                  <tr key={product._id} className="hover:bg-gray-50 transition-colors">
+                    <td className="py-4 px-6">
                       <div className="flex items-center">
                         {product.images?.[0] && (
                           <img
                             src={product.images[0]}
                             alt={product.title}
-                            className="w-12 h-12 object-cover rounded mr-3"
+                            className="w-14 h-14 object-cover rounded-lg mr-4 border border-gray-200"
                           />
                         )}
                         <div>
-                          <p className="font-medium">{product.title}</p>
+                          <p className="font-semibold text-gray-900">{product.title}</p>
                           <p className="text-sm text-gray-500">{product.category?.name}</p>
                         </div>
                       </div>
                     </td>
-                    <td className="py-4 px-4">KES {product.price}</td>
-                    <td className="py-4 px-4">
+                    <td className="py-4 px-6 font-medium text-gray-900">KES {product.price}</td>
+                    <td className="py-4 px-6">
                       <input
                         type="number"
                         value={product.stock}
                         onChange={(e) => handleStockUpdate(product._id, e.target.value)}
-                        className="w-20 px-2 py-1 border rounded"
+                        className="w-20 px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         min="0"
                       />
                     </td>
-                    <td className="py-4 px-4">
-                      <span className={`px-2 py-1 rounded text-xs ${
-                        product.approved ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                      }`}>
-                        {product.approved ? 'Approved' : 'Pending Approval'}
+                    <td className="py-4 px-6">
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${product.approved ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                        }`}>
+                        {product.approved ? 'Approved' : 'Pending'}
                       </span>
                     </td>
-                    <td className="py-4 px-4">
+                    <td className="py-4 px-6">
                       <div className="flex space-x-2">
                         <button
                           onClick={() => navigate(`/product/${product._id}`)}
-                          className="px-3 py-1 text-sm bg-gray-100 rounded hover:bg-gray-200"
+                          className="px-4 py-1.5 text-sm bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors font-medium"
                         >
                           View
                         </button>
                         <button
                           onClick={() => handleDelete(product._id)}
-                          className="px-3 py-1 text-sm bg-red-100 text-red-800 rounded hover:bg-red-200"
+                          className="px-4 py-1.5 text-sm bg-red-50 text-red-700 rounded-lg hover:bg-red-100 transition-colors font-medium"
                         >
                           Delete
                         </button>
