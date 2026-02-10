@@ -19,6 +19,8 @@ import AdminBanners from '../pages/admin/Banners'
 import AdminUsers from '../pages/admin/Users'
 import AdminReviews from '../pages/admin/Reviews'
 import AdminSettings from '../pages/admin/Settings'
+import AdminReports from '../pages/admin/Reports'
+import AdminLogs from '../pages/admin/Logs'
 
 import VendorDashboard from '../pages/vendor/Dashboard'
 import VendorProducts from '../pages/vendor/Products'
@@ -151,6 +153,8 @@ function AppRouter() {
         <Route path="users" element={<AdminUsers />} />
         <Route path="reviews" element={<AdminReviews />} />
         <Route path="settings" element={<AdminSettings />} />
+        <Route path="reports" element={<AdminReports />} />
+        <Route path="logs" element={<AdminLogs />} />
         <Route index element={<Navigate to="dashboard" replace />} />
       </Route>
 

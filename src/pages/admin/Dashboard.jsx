@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import api from '../../services/api'
-import { 
-  TrendingUp, ShoppingBag, Users, Package, 
+import {
+  TrendingUp, ShoppingBag, Users, Package,
   DollarSign, Clock, Star, Eye,
   BarChart3, PlusCircle, FileText, Settings,
   CheckCircle, AlertCircle, XCircle, Truck,
@@ -10,6 +11,7 @@ import {
 } from 'lucide-react'
 
 const AdminDashboard = () => {
+  const navigate = useNavigate()
   const [stats, setStats] = useState({
     totalOrders: 0,
     totalRevenue: 0,
@@ -111,7 +113,7 @@ const AdminDashboard = () => {
       {/* Header - Mobile & Desktop */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 md:gap-4">
         <div className="flex items-center justify-between md:justify-start gap-4">
-          <button 
+          <button
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
             className="md:hidden p-2 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100"
           >
@@ -127,9 +129,9 @@ const AdminDashboard = () => {
         <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-500 bg-white px-3 py-1.5 md:px-4 md:py-2 rounded-lg shadow-sm">
           <Clock className="h-3 w-3 sm:h-4 sm:w-4" />
           <span className="truncate">
-            {new Date().toLocaleDateString('en-US', { 
+            {new Date().toLocaleDateString('en-US', {
               weekday: 'short',
-              month: 'short', 
+              month: 'short',
               day: 'numeric',
               year: 'numeric'
             })}
@@ -322,7 +324,10 @@ const AdminDashboard = () => {
           <p className="text-xs sm:text-sm text-gray-500 hidden sm:block">Common admin tasks</p>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 md:gap-4">
-          <button className="group flex flex-col items-center justify-center p-3 sm:p-4 md:p-6 rounded-lg sm:rounded-xl border-2 border-blue-100 hover:border-blue-300 hover:bg-blue-50 transition-all duration-200">
+          <button
+            onClick={() => navigate('/admin/products')}
+            className="group flex flex-col items-center justify-center p-3 sm:p-4 md:p-6 rounded-lg sm:rounded-xl border-2 border-blue-100 hover:border-blue-300 hover:bg-blue-50 transition-all duration-200"
+          >
             <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full bg-blue-100 group-hover:bg-blue-200 flex items-center justify-center mb-2 sm:mb-3 transition-colors">
               <PlusCircle className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 text-blue-600" />
             </div>
@@ -330,7 +335,10 @@ const AdminDashboard = () => {
             <span className="text-[10px] sm:text-xs text-gray-500 mt-0.5 truncate">New listing</span>
           </button>
 
-          <button className="group flex flex-col items-center justify-center p-3 sm:p-4 md:p-6 rounded-lg sm:rounded-xl border-2 border-blue-100 hover:border-blue-300 hover:bg-blue-50 transition-all duration-200">
+          <button
+            onClick={() => navigate('/admin/reports')}
+            className="group flex flex-col items-center justify-center p-3 sm:p-4 md:p-6 rounded-lg sm:rounded-xl border-2 border-blue-100 hover:border-blue-300 hover:bg-blue-50 transition-all duration-200"
+          >
             <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full bg-blue-100 group-hover:bg-blue-200 flex items-center justify-center mb-2 sm:mb-3 transition-colors">
               <BarChart3 className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 text-blue-600" />
             </div>
@@ -338,7 +346,10 @@ const AdminDashboard = () => {
             <span className="text-[10px] sm:text-xs text-gray-500 mt-0.5 truncate">Analytics</span>
           </button>
 
-          <button className="group flex flex-col items-center justify-center p-3 sm:p-4 md:p-6 rounded-lg sm:rounded-xl border-2 border-blue-100 hover:border-blue-300 hover:bg-blue-50 transition-all duration-200">
+          <button
+            onClick={() => navigate('/admin/users')}
+            className="group flex flex-col items-center justify-center p-3 sm:p-4 md:p-6 rounded-lg sm:rounded-xl border-2 border-blue-100 hover:border-blue-300 hover:bg-blue-50 transition-all duration-200"
+          >
             <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full bg-blue-100 group-hover:bg-blue-200 flex items-center justify-center mb-2 sm:mb-3 transition-colors">
               <Users className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 text-blue-600" />
             </div>
@@ -346,7 +357,10 @@ const AdminDashboard = () => {
             <span className="text-[10px] sm:text-xs text-gray-500 mt-0.5 truncate">Manage</span>
           </button>
 
-          <button className="group flex flex-col items-center justify-center p-3 sm:p-4 md:p-6 rounded-lg sm:rounded-xl border-2 border-blue-100 hover:border-blue-300 hover:bg-blue-50 transition-all duration-200">
+          <button
+            onClick={() => navigate('/admin/logs')}
+            className="group flex flex-col items-center justify-center p-3 sm:p-4 md:p-6 rounded-lg sm:rounded-xl border-2 border-blue-100 hover:border-blue-300 hover:bg-blue-50 transition-all duration-200"
+          >
             <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full bg-blue-100 group-hover:bg-blue-200 flex items-center justify-center mb-2 sm:mb-3 transition-colors">
               <FileText className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 text-blue-600" />
             </div>
