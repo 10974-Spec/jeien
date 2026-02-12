@@ -397,10 +397,14 @@ const Checkout = () => {
           clearInterval(interval)
           setPollingInterval(null)
           setProcessingPayment(false)
-          toast.success('Payment completed successfully!')
+
+          const orderIdDisplay = statusResponse.data.orderId || orderId
+          toast.success(`Payment completed successfully! Order ${orderIdDisplay} is being processed.`, {
+            duration: 5000
+          })
 
           clearCart()
-          navigate('/order-success', { state: { orderId: orderId } })
+          navigate('/orders')
         } else if (statusResponse.data.paymentStatus === 'FAILED') {
           clearInterval(interval)
           setPollingInterval(null)
@@ -423,9 +427,11 @@ const Checkout = () => {
                 clearInterval(interval)
                 setPollingInterval(null)
                 setProcessingPayment(false)
-                toast.success('Test payment completed!')
+                toast.success('Test payment completed! Redirecting to your orders...', {
+                  duration: 4000
+                })
                 clearCart()
-                navigate('/order-success', { state: { orderId: orderId } })
+                navigate('/orders')
               }
             } catch (error) {
               console.error('Error completing test payment:', error)
@@ -468,14 +474,18 @@ const Checkout = () => {
           if (result.redirectUrl) {
             window.location.href = result.redirectUrl
           } else {
-            toast.success('PayPal payment initiated successfully!')
+            toast.success(`PayPal payment completed! Order ${order.orderId} is being processed.`, {
+              duration: 5000
+            })
             clearCart()
-            navigate('/order-success', { state: { orderId: order._id } })
+            navigate('/orders')
           }
         } else if (paymentMethod === 'CARD') {
-          toast.success('Card payment processed successfully!')
+          toast.success(`Card payment completed! Order ${order.orderId} is being processed.`, {
+            duration: 5000
+          })
           clearCart()
-          navigate('/order-success', { state: { orderId: order._id } })
+          navigate('/orders')
         }
       } else {
         toast.error(result.message || 'Payment failed')
@@ -499,8 +509,10 @@ const Checkout = () => {
         await processMpesaPayment(newOrder)
       } else if (paymentMethod === 'CASH_ON_DELIVERY') {
         clearCart()
-        toast.success('Order placed successfully! Please have cash ready for delivery.')
-        navigate('/order-success', { state: { orderId: newOrder._id } })
+        toast.success(`Order ${newOrder.orderId} placed successfully! Please have cash ready for delivery.`, {
+          duration: 5000
+        })
+        navigate('/orders')
       } else if (paymentMethod === 'PAYPAL' || paymentMethod === 'CARD') {
         await handleOtherPayment(newOrder)
       }
@@ -570,8 +582,8 @@ const Checkout = () => {
                     <div
                       key={address._id}
                       className={`p-4 border rounded-lg cursor-pointer transition-all ${selectedAddress === address._id
-                          ? 'border-blue-500 bg-blue-50 transform scale-[1.02]'
-                          : 'border-gray-200 hover:border-gray-300'
+                        ? 'border-blue-500 bg-blue-50 transform scale-[1.02]'
+                        : 'border-gray-200 hover:border-gray-300'
                         }`}
                       onClick={() => handleAddressChange(address._id)}
                     >
@@ -977,10 +989,10 @@ const Checkout = () => {
               onClick={handlePlaceOrder}
               disabled={loading || processingPayment}
               className={`w-full py-4 rounded-lg font-bold text-lg transition-all duration-300 ${processingPayment
-                  ? 'bg-yellow-500 hover:bg-yellow-600 text-white'
-                  : loading
-                    ? 'bg-gray-400 text-white cursor-not-allowed'
-                    : 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-lg hover:shadow-xl'
+                ? 'bg-yellow-500 hover:bg-yellow-600 text-white'
+                : loading
+                  ? 'bg-gray-400 text-white cursor-not-allowed'
+                  : 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-lg hover:shadow-xl'
                 }`}
             >
               {processingPayment ? (
