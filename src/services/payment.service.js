@@ -16,7 +16,7 @@ const paymentService = {
       }
     });
   },
-  
+
   /**
    * Process PayPal payment
    * @param {Object} paymentData - Payment data
@@ -31,7 +31,7 @@ const paymentService = {
       }
     });
   },
-  
+
   /**
    * Process card payment
    * @param {Object} paymentData - Payment data
@@ -41,9 +41,9 @@ const paymentService = {
    * @param {string} paymentData.currency - Currency code (default: KES)
    */
   processCardPayment: (paymentData) => {
-    console.log('Processing card payment:', { 
-      ...paymentData, 
-      token: paymentData.token ? `${paymentData.token.substring(0, 10)}...` : 'missing' 
+    console.log('Processing card payment:', {
+      ...paymentData,
+      token: paymentData.token ? `${paymentData.token.substring(0, 10)}...` : 'missing'
     });
     return api.post('/payments/card', paymentData, {
       headers: {
@@ -51,7 +51,7 @@ const paymentService = {
       }
     });
   },
-  
+
   /**
    * Get payment status for an order
    * @param {string} orderId - Order ID
@@ -64,7 +64,7 @@ const paymentService = {
       }
     });
   },
-  
+
   /**
    * Get available payment methods
    */
@@ -76,7 +76,7 @@ const paymentService = {
       }
     });
   },
-  
+
   /**
    * Test M-Pesa payment (development only)
    * @param {Object} testData - Test payment data
@@ -84,6 +84,19 @@ const paymentService = {
   testMpesaPayment: (testData) => {
     console.log('Testing M-Pesa payment:', testData);
     return api.post('/payments/test/mpesa', testData, {
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    });
+  },
+
+  /**
+   * Manually complete a payment (development only - for real M-Pesa payments on localhost)
+   * @param {string} orderId - Order ID to complete
+   */
+  manualCompletePayment: (orderId) => {
+    console.log('Manually completing payment for order:', orderId);
+    return api.post('/payments/manual-complete', { orderId }, {
       headers: {
         'Content-Type': 'application/json',
       }
