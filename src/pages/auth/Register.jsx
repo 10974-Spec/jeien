@@ -32,15 +32,24 @@ const Register = () => {
     e.preventDefault()
     setError('')
 
-    // Validate passwords match
-    if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match')
-      return
+    // Only validate passwords if provided
+    if (formData.password || formData.confirmPassword) {
+      // Validate passwords match
+      if (formData.password !== formData.confirmPassword) {
+        setError('Passwords do not match')
+        return
+      }
+
+      // Validate password strength
+      if (formData.password.length < 6) {
+        setError('Password must be at least 6 characters')
+        return
+      }
     }
 
-    // Validate password strength
-    if (formData.password.length < 6) {
-      setError('Password must be at least 6 characters')
+    // For vendors, password is required
+    if (formData.role === 'VENDOR' && !formData.password) {
+      setError('Password is required for vendor accounts')
       return
     }
 
@@ -50,9 +59,13 @@ const Register = () => {
       const userData = {
         name: formData.name,
         email: formData.email,
-        password: formData.password,
         phone: formData.phone,
         role: formData.role,
+      }
+
+      // Only include password if provided
+      if (formData.password) {
+        userData.password = formData.password
       }
 
       if (formData.role === 'VENDOR') {
@@ -218,34 +231,36 @@ const Register = () => {
 
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-                Password
+                Password {formData.role === 'BUYER' && <span className="text-gray-500">(Optional)</span>}
               </label>
               <input
                 id="password"
                 name="password"
                 type="password"
                 autoComplete="new-password"
-                required
+                required={formData.role === 'VENDOR'}
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 className="w-full px-4 py-3 border border-gray-200 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all duration-200"
                 placeholder="••••••••"
               />
               <p className="mt-2 text-xs text-gray-500">
-                Must be at least 6 characters
+                {formData.role === 'BUYER'
+                  ? 'Optional for buyers - you can set a password later or use social login'
+                  : 'Must be at least 6 characters'}
               </p>
             </div>
 
             <div>
               <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
-                Confirm Password
+                Confirm Password {formData.role === 'BUYER' && <span className="text-gray-500">(Optional)</span>}
               </label>
               <input
                 id="confirmPassword"
                 name="confirmPassword"
                 type="password"
                 autoComplete="new-password"
-                required
+                required={formData.role === 'VENDOR'}
                 value={formData.confirmPassword}
                 onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
                 className="w-full px-4 py-3 border border-gray-200 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all duration-200"

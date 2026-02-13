@@ -26,6 +26,8 @@ const vendorService = {
     api.put(`/vendors/${vendorId}/status`, statusData),
 
   getPublicVendorProfile: (vendorId) => api.get(`/vendors/public/${vendorId}`),
+
+  deleteVendor: (vendorId) => api.delete(`/vendors/${vendorId}`),
 }
 
 export default vendorService

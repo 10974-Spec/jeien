@@ -6,6 +6,7 @@ const AdminOrders = () => {
   const [loading, setLoading] = useState(true)
   const [selectedOrder, setSelectedOrder] = useState(null)
   const [showModal, setShowModal] = useState(false)
+  const [deleteModal, setDeleteModal] = useState({ show: false, order: null })
   const [filters, setFilters] = useState({
     status: '',
     paymentStatus: '',
@@ -62,6 +63,22 @@ const AdminOrders = () => {
       case 'PENDING': return 'bg-gray-100 text-gray-800'
       case 'CANCELLED': return 'bg-red-100 text-red-800'
       default: return 'bg-gray-100 text-gray-800'
+    }
+  }
+
+  const handleDeleteClick = (order) => {
+    setDeleteModal({ show: true, order })
+  }
+
+  const handleDeleteConfirm = async () => {
+    try {
+      await orderService.deleteOrder(deleteModal.order._id)
+      setDeleteModal({ show: false, order: null })
+      fetchOrders()
+      alert('Order deleted successfully')
+    } catch (error) {
+      console.error('Failed to delete order:', error)
+      alert('Failed to delete order: ' + error.message)
     }
   }
 
@@ -171,6 +188,12 @@ const AdminOrders = () => {
                           className="px-3 py-1 text-sm bg-blue-100 text-blue-800 rounded hover:bg-blue-200"
                         >
                           View
+                        </button>
+                        <button
+                          onClick={() => handleDeleteClick(order)}
+                          className="px-3 py-1 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200"
+                        >
+                          Delete
                         </button>
                       </div>
                     </td>
@@ -337,6 +360,33 @@ const AdminOrders = () => {
                   </div>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteModal.show && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">Confirm Delete</h3>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to delete order <strong>#{deleteModal.order?.orderNumber || deleteModal.order?._id?.slice(-6)}</strong>?
+              This action cannot be undone.
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setDeleteModal({ show: false, order: null })}
+                className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteConfirm}
+                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+              >
+                Delete Order
+              </button>
             </div>
           </div>
         </div>

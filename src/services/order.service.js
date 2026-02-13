@@ -77,6 +77,15 @@ const orderService = {
   trackOrder: (orderId) => {
     console.log('Tracking order:', orderId)
     return api.get(`/orders/track/${orderId}`)
+  },
+
+  /**
+   * Delete order (admin only)
+   * @param {string} id - Order ID
+   */
+  deleteOrder: (id) => {
+    console.log('Deleting order:', id)
+    return api.delete(`/orders/${id}`)
   }
 }
 
