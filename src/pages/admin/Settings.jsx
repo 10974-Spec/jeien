@@ -1,4 +1,5 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react';
+import settingsService from '../../services/settings.service';
 
 const AdminSettings = () => {
   const [settings, setSettings] = useState({
@@ -6,30 +7,86 @@ const AdminSettings = () => {
     siteEmail: 'support@jeien.com',
     sitePhone: '+254746917511',
     currency: 'KES',
-    defaultCommission: 10,
+    defaultCommission: 7, // Changed from 10 to 7
     allowVendorRegistration: true,
     autoApproveVendors: false,
     requireProductApproval: true,
     maintenanceMode: false,
-  })
+    enableMpesa: true,
+    enablePaypal: true,
+    enableCards: true,
+    enableCashOnDelivery: true
+  });
+
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState({ type: '', text: '' });
+
+  // Fetch settings on component mount
+  useEffect(() => {
+    fetchSettings();
+  }, []);
+
+  const fetchSettings = async () => {
+    try {
+      setLoading(true);
+      const response = await settingsService.getAdminSettings();
+      if (response.success && response.data.settings) {
+        setSettings(response.data.settings);
+      }
+    } catch (error) {
+      console.error('Failed to fetch settings:', error);
+      setMessage({ type: 'error', text: 'Failed to load settings' });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleChange = (e) => {
-    const { name, value, type, checked } = e.target
+    const { name, value, type, checked } = e.target;
     setSettings(prev => ({
       ...prev,
       [name]: type === 'checkbox' ? checked : value
-    }))
-  }
+    }));
+  };
 
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    // In real app, save settings to backend
-    alert('Settings saved successfully!')
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      setSaving(true);
+      setMessage({ type: '', text: '' });
+
+      const response = await settingsService.updateAdminSettings(settings);
+
+      if (response.success) {
+        setMessage({ type: 'success', text: 'Settings saved successfully!' });
+        setTimeout(() => setMessage({ type: '', text: '' }), 3000);
+      }
+    } catch (error) {
+      console.error('Failed to save settings:', error);
+      setMessage({ type: 'error', text: error.response?.data?.message || 'Failed to save settings' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-gray-600">Loading settings...</div>
+      </div>
+    );
   }
 
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-gray-800">Admin Settings</h1>
+
+      {message.text && (
+        <div className={`p-4 rounded-lg ${message.type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+          {message.text}
+        </div>
+      )}
 
       <div className="bg-white p-6 rounded-lg shadow">
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -97,7 +154,7 @@ const AdminSettings = () => {
 
           <div className="space-y-4">
             <h3 className="text-lg font-medium">Platform Settings</h3>
-            
+
             <div className="flex items-center">
               <input
                 type="checkbox"
@@ -111,7 +168,7 @@ const AdminSettings = () => {
                 Allow Vendor Registration
               </label>
             </div>
-            
+
             <div className="flex items-center">
               <input
                 type="checkbox"
@@ -125,7 +182,7 @@ const AdminSettings = () => {
                 Auto-approve New Vendors
               </label>
             </div>
-            
+
             <div className="flex items-center">
               <input
                 type="checkbox"
@@ -139,7 +196,7 @@ const AdminSettings = () => {
                 Require Product Approval
               </label>
             </div>
-            
+
             <div className="flex items-center">
               <input
                 type="checkbox"
@@ -157,7 +214,7 @@ const AdminSettings = () => {
 
           <div className="space-y-4">
             <h3 className="text-lg font-medium">Payment Settings</h3>
-            
+
             <div className="space-y-3">
               <div className="flex items-center">
                 <input
@@ -170,7 +227,7 @@ const AdminSettings = () => {
                   Enable M-Pesa Payments
                 </label>
               </div>
-              
+
               <div className="flex items-center">
                 <input
                   type="checkbox"
@@ -182,7 +239,7 @@ const AdminSettings = () => {
                   Enable PayPal Payments
                 </label>
               </div>
-              
+
               <div className="flex items-center">
                 <input
                   type="checkbox"
@@ -198,12 +255,16 @@ const AdminSettings = () => {
           </div>
 
           <div className="pt-4 border-t">
-            <button
-              type="submit"
-              className="px-6 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-            >
-              Save Settings
-            </button>
+            {/* Save Button */}
+            <div className="flex justify-end">
+              <button
+                type="submit"
+                disabled={saving}
+                className={`px-6 py-2 rounded ${saving ? 'bg-gray-400' : 'bg-blue-600 hover:bg-blue-700'} text-white`}
+              >
+                {saving ? 'Saving...' : 'Save Settings'}
+              </button>
+            </div>
           </div>
         </form>
       </div>

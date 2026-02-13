@@ -7,6 +7,8 @@ import PublicLayout from '../layouts/PublicLayout'
 
 import Login from '../pages/auth/Login'
 import Register from '../pages/auth/Register'
+import ForgotPassword from '../pages/auth/ForgotPassword'
+import ResetPassword from '../pages/auth/ResetPassword'
 
 import AdminDashboard from '../pages/admin/Dashboard'
 import AdminProducts from '../pages/admin/Products'
@@ -18,6 +20,8 @@ import AdminPayments from '../pages/admin/Payments'
 import AdminBanners from '../pages/admin/Banners'
 import AdminUsers from '../pages/admin/Users'
 import AdminReviews from '../pages/admin/Reviews'
+import AdminNotifications from '../pages/admin/Notifications'
+import AdminAnalytics from '../pages/admin/Analytics'
 import AdminSettings from '../pages/admin/Settings'
 import AdminReports from '../pages/admin/Reports'
 import AdminLogs from '../pages/admin/Logs'
@@ -137,6 +141,16 @@ function AppRouter() {
           <Register />
         </PublicRoute>
       } />
+      <Route path="/forgot-password" element={
+        <PublicRoute>
+          <ForgotPassword />
+        </PublicRoute>
+      } />
+      <Route path="/reset-password" element={
+        <PublicRoute>
+          <ResetPassword />
+        </PublicRoute>
+      } />
 
       {/* Admin Routes */}
       <Route path="/admin" element={<AdminRoutes />}>
@@ -152,6 +166,8 @@ function AppRouter() {
         <Route path="banners" element={<AdminBanners />} />
         <Route path="users" element={<AdminUsers />} />
         <Route path="reviews" element={<AdminReviews />} />
+        <Route path="notifications" element={<AdminNotifications />} />
+        <Route path="analytics" element={<AdminAnalytics />} />
         <Route path="settings" element={<AdminSettings />} />
         <Route path="reports" element={<AdminReports />} />
         <Route path="logs" element={<AdminLogs />} />

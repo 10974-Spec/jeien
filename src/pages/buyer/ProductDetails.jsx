@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
 import { useCart } from '../../hooks/useCart'
+import useAnalytics from '../../hooks/useAnalytics'
 import productService from '../../services/product.service'
 import reviewService from '../../services/review.service'
 
@@ -10,6 +11,7 @@ const ProductDetails = () => {
   const navigate = useNavigate()
   const { user, isAuthenticated } = useAuth()
   const { addToCart, isInCart, getItemCount } = useCart()
+  const { trackProductView, trackAddToCart } = useAnalytics()
 
   const [product, setProduct] = useState(null)
   const [reviews, setReviews] = useState([])
@@ -44,6 +46,9 @@ const ProductDetails = () => {
       setProduct(productData)
       setSelectedImage(0)
 
+      // Track product view
+      trackProductView(productData._id, productData.title)
+
       // Fetch reviews
       const reviewsRes = await reviewService.getProductReviews(productData._id)
       setReviews(reviewsRes.data.reviews || [])
@@ -72,6 +77,10 @@ const ProductDetails = () => {
       quantity: quantity,
       selectedPricingType: pricingType // Add selected pricing type
     })
+
+    // Track add to cart
+    trackAddToCart(product._id, product.title, quantity)
+
     setQuantity(1)
   }
 
@@ -219,8 +228,8 @@ const ProductDetails = () => {
                     key={index}
                     onClick={() => setSelectedImage(index)}
                     className={`flex-shrink-0 w-20 h-20 rounded overflow-hidden border-2 transition-all ${selectedImage === index
-                        ? 'border-blue-500 ring-2 ring-blue-200'
-                        : 'border-transparent hover:border-gray-300'
+                      ? 'border-blue-500 ring-2 ring-blue-200'
+                      : 'border-transparent hover:border-gray-300'
                       }`}
                   >
                     <img
@@ -272,8 +281,8 @@ const ProductDetails = () => {
                     <svg
                       key={i}
                       className={`w-5 h-5 ${i < Math.floor(product.averageRating || 0)
-                          ? 'text-yellow-400'
-                          : 'text-gray-300'
+                        ? 'text-yellow-400'
+                        : 'text-gray-300'
                         }`}
                       fill="currentColor"
                       viewBox="0 0 20 20"
@@ -326,7 +335,7 @@ const ProductDetails = () => {
               <div className="flex items-center">
                 <span className="text-gray-600 w-32">Stock Status:</span>
                 <span className={`font-medium ${product.stock > 10 ? 'text-green-600' :
-                    product.stock > 0 ? 'text-yellow-600' : 'text-red-600'
+                  product.stock > 0 ? 'text-yellow-600' : 'text-red-600'
                   }`}>
                   {product.stock > 10 ? (
                     <span className="flex items-center">
@@ -360,8 +369,8 @@ const ProductDetails = () => {
                 <div className="space-y-3">
                   {/* Retail Option */}
                   <label className={`flex items-center justify-between p-3 rounded-lg border-2 cursor-pointer transition-all ${pricingType === 'retail'
-                      ? 'border-blue-500 bg-blue-50'
-                      : 'border-gray-200 hover:border-gray-300 bg-white'
+                    ? 'border-blue-500 bg-blue-50'
+                    : 'border-gray-200 hover:border-gray-300 bg-white'
                     }`}>
                     <div className="flex items-center gap-3">
                       <input
@@ -387,8 +396,8 @@ const ProductDetails = () => {
 
                   {/* Wholesale Option */}
                   <label className={`flex items-center justify-between p-3 rounded-lg border-2 cursor-pointer transition-all ${pricingType === 'wholesale'
-                      ? 'border-green-500 bg-green-50'
-                      : 'border-gray-200 hover:border-gray-300 bg-white'
+                    ? 'border-green-500 bg-green-50'
+                    : 'border-gray-200 hover:border-gray-300 bg-white'
                     }`}>
                     <div className="flex items-center gap-3">
                       <input
@@ -492,8 +501,8 @@ const ProductDetails = () => {
                   onClick={handleAddToCart}
                   disabled={!product || product.stock === 0}
                   className={`flex-1 py-4 px-6 rounded-lg font-medium text-lg flex items-center justify-center gap-2 transition-all ${!product || product.stock === 0
-                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                      : 'bg-blue-600 text-white hover:bg-blue-700 hover:shadow-lg'
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    : 'bg-blue-600 text-white hover:bg-blue-700 hover:shadow-lg'
                     }`}
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -507,8 +516,8 @@ const ProductDetails = () => {
                 onClick={handleBuyNow}
                 disabled={!product || product.stock === 0}
                 className={`py-4 px-8 rounded-lg font-medium text-lg flex items-center justify-center gap-2 transition-all ${!product || product.stock === 0
-                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                    : 'bg-green-600 text-white hover:bg-green-700 hover:shadow-lg'
+                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  : 'bg-green-600 text-white hover:bg-green-700 hover:shadow-lg'
                   }`}
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -549,8 +558,8 @@ const ProductDetails = () => {
               <button
                 onClick={() => setActiveTab('description')}
                 className={`px-8 py-4 font-medium border-b-2 transition-colors ${activeTab === 'description'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-600 hover:text-gray-900'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-600 hover:text-gray-900'
                   }`}
               >
                 Description
@@ -558,8 +567,8 @@ const ProductDetails = () => {
               <button
                 onClick={() => setActiveTab('specifications')}
                 className={`px-8 py-4 font-medium border-b-2 transition-colors ${activeTab === 'specifications'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-600 hover:text-gray-900'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-600 hover:text-gray-900'
                   }`}
               >
                 Specifications
@@ -567,8 +576,8 @@ const ProductDetails = () => {
               <button
                 onClick={() => setActiveTab('reviews')}
                 className={`px-8 py-4 font-medium border-b-2 transition-colors ${activeTab === 'reviews'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-600 hover:text-gray-900'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-600 hover:text-gray-900'
                   }`}
               >
                 Reviews ({reviews.length})

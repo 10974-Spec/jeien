@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react'
 import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useRole } from '../hooks/useRole'
-import { 
-  LayoutDashboard, Package, FolderTree, Store, 
-  ShoppingCart, CreditCard, Image, Users, 
+import NotificationBell from '../components/NotificationBell'
+import {
+  LayoutDashboard, Package, FolderTree, Store,
+  ShoppingCart, CreditCard, Image, Users,
   Star, Settings, Bell, LogOut, User,
   ChevronLeft, ChevronRight, Menu, X,
   BarChart3, Shield, FileText, Home,
@@ -27,7 +28,7 @@ const AdminLayout = ({ children }) => {
         setSidebarOpen(false)
       }
     }
-    
+
     checkMobile()
     window.addEventListener('resize', checkMobile)
     return () => window.removeEventListener('resize', checkMobile)
@@ -35,6 +36,7 @@ const AdminLayout = ({ children }) => {
 
   const menuItems = [
     { path: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { path: '/admin/analytics', label: 'Analytics', icon: BarChart3 },
     { path: '/admin/products', label: 'Products', icon: Package },
     { path: '/admin/categories', label: 'Categories', icon: FolderTree },
     { path: '/admin/vendors', label: 'Vendors', icon: Store },
@@ -43,6 +45,7 @@ const AdminLayout = ({ children }) => {
     { path: '/admin/banners', label: 'Banners', icon: Image },
     { path: '/admin/users', label: 'Users', icon: Users },
     { path: '/admin/reviews', label: 'Reviews', icon: Star },
+    { path: '/admin/notifications', label: 'Notifications', icon: Bell },
     { path: '/admin/settings', label: 'Settings', icon: Settings },
   ]
 
@@ -70,8 +73,8 @@ const AdminLayout = ({ children }) => {
           <Shield className="w-16 h-16 text-blue-600 mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Access Denied</h2>
           <p className="text-gray-600 mb-6">You don't have permission to access the admin panel.</p>
-          <Link 
-            to="/" 
+          <Link
+            to="/"
             className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-200"
           >
             <Home className="h-4 w-4" />
@@ -102,7 +105,7 @@ const AdminLayout = ({ children }) => {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <button 
+            <button
               onClick={goToShop}
               className="p-2 rounded-lg hover:bg-blue-600 transition-colors"
               title="Back to Shop"
@@ -121,7 +124,7 @@ const AdminLayout = ({ children }) => {
 
       <div className="flex pt-16 md:pt-0">
         {/* Sidebar - Desktop & Mobile */}
-        <aside 
+        <aside
           className={`
             fixed md:relative z-40 h-full md:h-screen
             transition-all duration-300 ease-in-out
@@ -188,7 +191,7 @@ const AdminLayout = ({ children }) => {
                 {menuItems.map((item) => {
                   const Icon = item.icon
                   const isActive = location.pathname === item.path
-                  
+
                   return (
                     <li key={item.path}>
                       <Link
@@ -197,8 +200,8 @@ const AdminLayout = ({ children }) => {
                         className={`
                           flex items-center gap-3 px-4 py-3 rounded-xl
                           transition-all duration-200
-                          ${isActive 
-                            ? 'bg-white/10 text-white shadow-lg' 
+                          ${isActive
+                            ? 'bg-white/10 text-white shadow-lg'
                             : 'hover:bg-white/5 text-blue-100 hover:text-white'
                           }
                           ${!sidebarOpen && 'md:justify-center md:px-3'}
@@ -240,7 +243,7 @@ const AdminLayout = ({ children }) => {
                 <ShoppingBag className="h-5 w-5" />
                 {sidebarOpen && <span className="font-medium">Back to Shop</span>}
               </button>
-              
+
               <button
                 onClick={handleLogout}
                 className={`
@@ -254,7 +257,7 @@ const AdminLayout = ({ children }) => {
                 <LogOut className="h-5 w-5" />
                 {sidebarOpen && <span className="font-medium">Logout</span>}
               </button>
-              
+
               {sidebarOpen && (
                 <div className="mt-4 pt-4 border-t border-blue-700/30">
                   <div className="flex items-center justify-between text-xs text-blue-300">
@@ -272,7 +275,7 @@ const AdminLayout = ({ children }) => {
 
         {/* Mobile Overlay */}
         {mobileMenuOpen && (
-          <div 
+          <div
             className="fixed inset-0 bg-black/50 z-30 md:hidden"
             onClick={closeMobileMenu}
           />
@@ -296,7 +299,7 @@ const AdminLayout = ({ children }) => {
               </div>
 
               <div className="flex items-center gap-4">
-                <button 
+                <button
                   onClick={goToShop}
                   className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-200 hover:from-blue-100 hover:to-blue-200 transition-all duration-200 text-blue-700 hover:text-blue-800"
                 >
@@ -304,12 +307,7 @@ const AdminLayout = ({ children }) => {
                   <span className="font-medium text-sm">Back to Shop</span>
                 </button>
 
-                <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors relative">
-                  <Bell className="h-5 w-5 text-gray-600" />
-                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center border-2 border-white">
-                    3
-                  </span>
-                </button>
+                <NotificationBell />
 
                 <div className="flex items-center gap-3 px-4 py-2 rounded-xl bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-200">
                   <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-600 to-blue-700 flex items-center justify-center">
@@ -349,27 +347,27 @@ const AdminLayout = ({ children }) => {
                       </p>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center gap-3">
-                    <button 
+                    <button
                       onClick={goToShop}
                       className="hidden md:flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-sm hover:shadow-md"
                     >
                       <ShoppingBag className="h-4 w-4" />
                       <span className="font-medium text-sm">Visit Shop</span>
                     </button>
-                    
+
                     <div className="hidden md:block text-xs text-gray-500 bg-gray-100 px-3 py-1.5 rounded-full">
-                      {new Date().toLocaleDateString('en-US', { 
+                      {new Date().toLocaleDateString('en-US', {
                         weekday: 'long',
-                        month: 'short', 
+                        month: 'short',
                         day: 'numeric'
                       })}
                     </div>
                   </div>
                 </div>
               </div>
-              
+
               {/* Main Content with Proper Padding */}
               <div className="p-6">
                 <Outlet />
@@ -386,7 +384,7 @@ const AdminLayout = ({ children }) => {
                   System Status: <span className="font-medium text-gray-700">Operational</span>
                 </span>
                 <span className="hidden md:inline">•</span>
-                <span>Last updated: {new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                <span>Last updated: {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
               </div>
               <div className="flex items-center gap-4">
                 <Link to="/" className="hover:text-blue-600 transition-colors">

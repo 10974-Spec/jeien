@@ -164,24 +164,11 @@ const VendorStoreSettings = () => {
       <h1 className="text-2xl font-bold text-gray-800">Store Settings</h1>
 
       {/* Commission Information Banner */}
-      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-l-4 border-blue-500 p-5 rounded-lg shadow-sm">
-        <div className="flex items-start">
-          <svg className="w-6 h-6 text-blue-600 mt-0.5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <div>
-            <h4 className="font-bold text-blue-900 mb-2">Platform Commission Structure</h4>
-            <p className="text-sm text-blue-800 mb-2">
-              All vendor sales are subject to a <strong>10% platform commission</strong>. This means:
-            </p>
-            <ul className="text-sm text-blue-800 space-y-1 ml-4">
-              <li>• <strong>90%</strong> of each sale is paid directly to your M-Pesa account</li>
-              <li>• <strong>10%</strong> goes to platform fees for hosting, payment processing, and support</li>
-              <li>• Payouts are processed automatically within 24-48 hours after order delivery</li>
-              <li>• Make sure your M-Pesa number below is correct to receive payments</li>
-            </ul>
-          </div>
-        </div>
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <h3 className="font-semibold text-blue-900 mb-2">Platform Commission</h3>
+        <p className="text-sm text-blue-800">
+          jeien agencies charges a 7% commission on all sales. You'll receive 93% of each sale directly to your registered payment method.
+        </p>
       </div>
 
       <div className="bg-white p-6 rounded-lg shadow">
@@ -486,7 +473,7 @@ const VendorStoreSettings = () => {
           </button>
         </form>
       </div>
-    </div>
+    </div >
   )
 }
 

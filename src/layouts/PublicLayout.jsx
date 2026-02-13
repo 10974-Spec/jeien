@@ -4,6 +4,8 @@ import { motion } from 'framer-motion'
 import { Search, ShoppingCart, Heart, User, Menu, MapPin, ChevronDown, Phone, LogOut, LayoutDashboard } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
 import { useRole } from '../hooks/useRole'
+import FloatingChatBubbles from '../components/FloatingChatBubbles'
+
 
 // Button Component
 const Button = ({ children, variant = "default", size = "md", className = "", asChild = false, ...props }) => {
@@ -147,7 +149,7 @@ const Header = ({ user, isAuthenticated, handleLogout, getDashboardPath, userRol
               <span className="hidden sm:inline">Nairobi, Kenya</span>
             </div>
             <span className="hidden md:inline text-blue-200">
-              Fast And Secure Delivery 
+              Fast And Secure Delivery
             </span>
           </div>
           <div className="flex items-center gap-4">
@@ -165,7 +167,7 @@ const Header = ({ user, isAuthenticated, handleLogout, getDashboardPath, userRol
           <div className="flex items-center justify-between gap-4">
             {/* Logo */}
             <Link to="/">
-              <motion.div 
+              <motion.div
                 className="flex items-center gap-2"
                 whileHover={{ scale: 1.02 }}
               >
@@ -184,7 +186,7 @@ const Header = ({ user, isAuthenticated, handleLogout, getDashboardPath, userRol
               <div className="relative flex items-center">
                 <div className="relative flex-1">
                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <Input 
+                  <Input
                     placeholder="Search for products, brands and more..."
                     className="pl-11 pr-4 h-12 rounded-l-xl rounded-r-none border-r-0 bg-white focus:outline-none focus:ring-2 focus:ring-blue-600"
                     value={searchQuery}
@@ -200,9 +202,9 @@ const Header = ({ user, isAuthenticated, handleLogout, getDashboardPath, userRol
             {/* Actions */}
             <div className="flex items-center gap-2">
               {/* Wishlist Button - Hidden on mobile */}
-              <Button 
-                variant="ghost" 
-                size="icon" 
+              <Button
+                variant="ghost"
+                size="icon"
                 className="hidden sm:flex relative text-gray-600 hover:text-blue-700"
                 onClick={() => handleNavClick('/wishlist')}
               >
@@ -211,12 +213,12 @@ const Header = ({ user, isAuthenticated, handleLogout, getDashboardPath, userRol
                   5
                 </Badge>
               </Button>
-              
+
               {/* Dashboard Button - Always visible on mobile when authenticated */}
               {isAuthenticated && (
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
+                <Button
+                  variant="ghost"
+                  size="icon"
                   className="sm:hidden relative text-gray-600 hover:text-blue-700"
                   onClick={handleDashboardClick}
                   title={`${getUserRoleDisplay()} Dashboard`}
@@ -224,11 +226,11 @@ const Header = ({ user, isAuthenticated, handleLogout, getDashboardPath, userRol
                   <LayoutDashboard className="h-5 w-5" />
                 </Button>
               )}
-              
+
               {/* Cart Button */}
-              <Button 
-                variant="ghost" 
-                size="icon" 
+              <Button
+                variant="ghost"
+                size="icon"
                 className="relative text-gray-600 hover:text-blue-700"
                 onClick={() => handleNavClick('/cart')}
               >
@@ -242,27 +244,27 @@ const Header = ({ user, isAuthenticated, handleLogout, getDashboardPath, userRol
               <div className="hidden sm:flex items-center gap-2 pl-2 border-l border-gray-200">
                 {isAuthenticated ? (
                   <div className="flex items-center gap-2">
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       className="gap-2 text-gray-600 hover:text-blue-700"
                       onClick={handleAccountClick}
                     >
                       <User className="h-4 w-4" />
                       <span className="hidden lg:inline">{user?.name?.split(' ')[0] || 'Profile'}</span>
                     </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       className="gap-2 text-gray-600 hover:text-blue-700"
                       onClick={handleDashboardClick}
                     >
                       <LayoutDashboard className="h-4 w-4" />
                       <span className="hidden lg:inline">Dashboard</span>
                     </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
+                    <Button
+                      variant="ghost"
+                      size="icon"
                       className="text-gray-600 hover:text-red-600"
                       onClick={handleLogout}
                     >
@@ -270,9 +272,9 @@ const Header = ({ user, isAuthenticated, handleLogout, getDashboardPath, userRol
                     </Button>
                   </div>
                 ) : (
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     className="gap-2 text-gray-600 hover:text-blue-700"
                     onClick={handleAccountClick}
                   >
@@ -283,9 +285,9 @@ const Header = ({ user, isAuthenticated, handleLogout, getDashboardPath, userRol
               </div>
 
               {/* Mobile Menu Button */}
-              <Button 
-                variant="ghost" 
-                size="icon" 
+              <Button
+                variant="ghost"
+                size="icon"
                 className="md:hidden text-gray-600 hover:text-blue-700"
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
               >
@@ -298,7 +300,7 @@ const Header = ({ user, isAuthenticated, handleLogout, getDashboardPath, userRol
           <form onSubmit={handleSearch} className="mt-4 md:hidden">
             <div className="relative">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input 
+              <Input
                 placeholder="Search products..."
                 className="pl-11 h-11 rounded-xl bg-white"
                 value={searchQuery}
@@ -321,7 +323,7 @@ const Header = ({ user, isAuthenticated, handleLogout, getDashboardPath, userRol
                 All Categories
                 <ChevronDown className="h-4 w-4" />
               </Button>
-              
+
               {/* Categories Dropdown Menu */}
               <div className="absolute left-0 top-full w-64 bg-white border border-gray-200 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
                 {mainCategories.map((category) => (
@@ -336,18 +338,17 @@ const Header = ({ user, isAuthenticated, handleLogout, getDashboardPath, userRol
                 ))}
               </div>
             </div>
-            
+
             {/* Main Navigation */}
             <div className="flex items-center">
               {navLinks.map((item) => (
-                <Button 
-                  key={item.name} 
-                  variant="ghost" 
-                  className={`rounded-none h-12 px-4 ${
-                    location.pathname === item.path 
-                      ? 'text-blue-700 border-b-2 border-blue-700' 
-                      : 'text-gray-600 hover:text-blue-700'
-                  }`}
+                <Button
+                  key={item.name}
+                  variant="ghost"
+                  className={`rounded-none h-12 px-4 ${location.pathname === item.path
+                    ? 'text-blue-700 border-b-2 border-blue-700'
+                    : 'text-gray-600 hover:text-blue-700'
+                    }`}
                   onClick={() => handleNavClick(item.path)}
                 >
                   {item.name}
@@ -356,7 +357,7 @@ const Header = ({ user, isAuthenticated, handleLogout, getDashboardPath, userRol
             </div>
 
             {/* Deals Banner */}
-            <Button 
+            <Button
               className="ml-auto gap-2 text-sm rounded-full bg-gradient-to-r from-blue-700 to-blue-800 text-white hover:from-blue-800 hover:to-blue-900"
               onClick={() => handleNavClick('/deals')}
             >
@@ -369,7 +370,7 @@ const Header = ({ user, isAuthenticated, handleLogout, getDashboardPath, userRol
 
       {/* Mobile Menu */}
       {isMenuOpen && (
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: "auto" }}
           exit={{ opacity: 0, height: 0 }}
@@ -394,11 +395,10 @@ const Header = ({ user, isAuthenticated, handleLogout, getDashboardPath, userRol
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-gray-900 truncate">{user?.name || 'User'}</p>
                     <p className="text-xs text-gray-500 flex items-center gap-1">
-                      <span className={`px-1.5 py-0.5 rounded-full text-xs font-medium ${
-                        userRole === 'admin' ? 'bg-red-100 text-red-800' :
+                      <span className={`px-1.5 py-0.5 rounded-full text-xs font-medium ${userRole === 'admin' ? 'bg-red-100 text-red-800' :
                         userRole === 'vendor' ? 'bg-blue-100 text-blue-800' :
-                        'bg-green-100 text-green-800'
-                      }`}>
+                          'bg-green-100 text-green-800'
+                        }`}>
                         {getUserRoleDisplay()}
                       </span>
                       <span className="truncate">{user?.email}</span>
@@ -407,7 +407,7 @@ const Header = ({ user, isAuthenticated, handleLogout, getDashboardPath, userRol
                 </div>
               </div>
             )}
-            
+
             {/* Main Navigation in Mobile */}
             {navLinks.map((item) => (
               <button
@@ -418,7 +418,7 @@ const Header = ({ user, isAuthenticated, handleLogout, getDashboardPath, userRol
                 {item.name}
               </button>
             ))}
-            
+
             <div className="border-t border-gray-200 pt-4">
               <h3 className="px-4 py-2 text-sm font-semibold text-gray-500">Categories</h3>
               {mainCategories.map((category) => (
@@ -431,7 +431,7 @@ const Header = ({ user, isAuthenticated, handleLogout, getDashboardPath, userRol
                 </button>
               ))}
             </div>
-            
+
             <div className="border-t border-gray-200 pt-4 space-y-2">
               {isAuthenticated ? (
                 <>
@@ -460,8 +460,8 @@ const Header = ({ user, isAuthenticated, handleLogout, getDashboardPath, userRol
                     <div className="flex items-center gap-3">
                       <LayoutDashboard className="h-4 w-4" />
                       {userRole === 'admin' ? 'Admin Dashboard' :
-                       userRole === 'vendor' ? 'Vendor Dashboard' :
-                       'My Dashboard'}
+                        userRole === 'vendor' ? 'Vendor Dashboard' :
+                          'My Dashboard'}
                     </div>
                   </button>
                   <button
@@ -520,7 +520,7 @@ const PublicLayout = ({ children }) => {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Header 
+      <Header
         user={user}
         isAuthenticated={isAuthenticated}
         handleLogout={handleLogout}
@@ -571,6 +571,9 @@ const PublicLayout = ({ children }) => {
           </div>
         </div>
       </footer>
+
+      {/* Floating Chat Bubbles */}
+      <FloatingChatBubbles />
     </div>
   )
 }

@@ -6,6 +6,7 @@ const AdminUsers = () => {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [roleFilter, setRoleFilter] = useState('')
+  const [deleteModal, setDeleteModal] = useState({ show: false, user: null })
 
   useEffect(() => {
     fetchUsers()
@@ -17,7 +18,7 @@ const AdminUsers = () => {
       const params = {}
       if (search) params.search = search
       if (roleFilter) params.role = roleFilter
-      
+
       const response = await userService.getAllUsers(params)
       setUsers(response.data.users || [])
     } catch (error) {
@@ -33,6 +34,22 @@ const AdminUsers = () => {
       fetchUsers()
     } catch (error) {
       console.error('Failed to update user role:', error)
+    }
+  }
+
+  const handleDeleteClick = (user) => {
+    setDeleteModal({ show: true, user })
+  }
+
+  const handleDeleteConfirm = async () => {
+    try {
+      await userService.deleteUser(deleteModal.user._id)
+      setDeleteModal({ show: false, user: null })
+      fetchUsers()
+      alert('User deleted successfully')
+    } catch (error) {
+      console.error('Failed to delete user:', error)
+      alert('Failed to delete user: ' + error.message)
     }
   }
 
@@ -115,9 +132,17 @@ const AdminUsers = () => {
                       {new Date(user.createdAt).toLocaleDateString()}
                     </td>
                     <td className="py-4">
-                      <button className="px-3 py-1 text-sm bg-gray-100 rounded hover:bg-gray-200">
-                        View Details
-                      </button>
+                      <div className="flex gap-2">
+                        <button className="px-3 py-1 text-sm bg-gray-100 rounded hover:bg-gray-200">
+                          View Details
+                        </button>
+                        <button
+                          onClick={() => handleDeleteClick(user)}
+                          className="px-3 py-1 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200"
+                        >
+                          Delete
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -126,6 +151,33 @@ const AdminUsers = () => {
           </div>
         )}
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {deleteModal.show && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">Confirm Delete</h3>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to delete user <strong>{deleteModal.user?.name}</strong>?
+              This action cannot be undone.
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setDeleteModal({ show: false, user: null })}
+                className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteConfirm}
+                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+              >
+                Delete User
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
