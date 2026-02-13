@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import orderService from '../../services/order.service'
+import invoiceService from '../../services/invoice.service'
 
 const AdminOrders = () => {
   const [orders, setOrders] = useState([])
@@ -7,6 +8,7 @@ const AdminOrders = () => {
   const [selectedOrder, setSelectedOrder] = useState(null)
   const [showModal, setShowModal] = useState(false)
   const [deleteModal, setDeleteModal] = useState({ show: false, order: null })
+  const [downloadingInvoice, setDownloadingInvoice] = useState(null)
   const [filters, setFilters] = useState({
     status: '',
     paymentStatus: '',
@@ -79,6 +81,21 @@ const AdminOrders = () => {
     } catch (error) {
       console.error('Failed to delete order:', error)
       alert('Failed to delete order: ' + error.message)
+    }
+  }
+
+  const handleDownloadInvoice = async (orderId) => {
+    try {
+      setDownloadingInvoice(orderId)
+      const blob = await invoiceService.downloadInvoice(orderId)
+      const order = orders.find(o => o._id === orderId)
+      const filename = `invoice-${order?.orderId || orderId}.pdf`
+      invoiceService.triggerDownload(blob, filename)
+    } catch (error) {
+      console.error('Failed to download invoice:', error)
+      alert('Failed to download invoice: ' + error.message)
+    } finally {
+      setDownloadingInvoice(null)
     }
   }
 
@@ -194,6 +211,14 @@ const AdminOrders = () => {
                           className="px-3 py-1 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200"
                         >
                           Delete
+                        </button>
+                        <button
+                          onClick={() => handleDownloadInvoice(order._id)}
+                          disabled={downloadingInvoice === order._id}
+                          className="px-3 py-1 text-sm bg-green-100 text-green-800 rounded hover:bg-green-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                          title="Download Invoice PDF"
+                        >
+                          {downloadingInvoice === order._id ? '...' : '📄 Invoice'}
                         </button>
                       </div>
                     </td>

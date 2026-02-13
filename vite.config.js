@@ -5,8 +5,7 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   server: {
-    // Fix 404 on page reload - fallback to index.html for all routes
-    historyApiFallback: true,
+    port: 5173,
     proxy: {
       '/api': {
         target: 'http://localhost:5000',
@@ -14,9 +13,5 @@ export default defineConfig({
         secure: false,
       }
     }
-  },
-  preview: {
-    // Also fix for production preview
-    historyApiFallback: true,
   }
 })
