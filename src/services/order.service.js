@@ -80,6 +80,15 @@ const orderService = {
   },
 
   /**
+   * Get my orders (alias for getUserOrders)
+   * @param {Object} params - Query parameters
+   */
+  getMyOrders: (params = {}) => {
+    console.log('Getting my orders with params:', params)
+    return api.get('/orders/user/me', { params })
+  },
+
+  /**
    * Delete order (admin only)
    * @param {string} id - Order ID
    */

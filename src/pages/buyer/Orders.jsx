@@ -40,7 +40,7 @@ const Orders = () => {
       setLoading(true)
       const params = {}
       if (statusFilter) params.status = statusFilter
-      
+
       const response = await orderService.getMyOrders(params)
       setOrders(response.data.orders || [])
     } catch (error) {
@@ -214,6 +214,14 @@ const Orders = () => {
                           Cancel Order
                         </button>
                       )}
+                      <a
+                        href={`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/invoices/${order._id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-block px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                      >
+                        Download Invoice
+                      </a>
                       <Link
                         to={`/orders/${order._id}`}
                         className="px-4 py-2 bg-gray-800 text-white rounded hover:bg-gray-900"
