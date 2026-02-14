@@ -383,7 +383,7 @@ const Checkout = () => {
     }
 
     let attempts = 0
-    const maxAttempts = isTestMode ? 2 : 30 // Fewer attempts for test mode
+    const maxAttempts = isTestMode ? 2 : 60 // 60 attempts = 10 minutes in production
 
     const interval = setInterval(async () => {
       attempts++
@@ -440,14 +440,47 @@ const Checkout = () => {
 
           console.log('Payment still processing...')
         } else if (attempts >= maxAttempts) {
+          // Final check before giving up
+          console.log('Max attempts reached, doing final status check...')
+
+          try {
+            const finalCheck = await paymentService.getPaymentStatus(orderId)
+
+            if (finalCheck.data.paymentStatus === 'COMPLETED') {
+              clearInterval(interval)
+              setPollingInterval(null)
+              setProcessingPayment(false)
+
+              toast.success('Payment completed! Redirecting to your orders...', {
+                duration: 5000
+              })
+              clearCart()
+              navigate('/orders')
+              return
+            }
+          } catch (error) {
+            console.error('Final status check error:', error)
+          }
+
           clearInterval(interval)
           setPollingInterval(null)
           setProcessingPayment(false)
 
           if (isTestMode) {
-            toast.info('Test payment timed out. Please check your order status.')
+            toast.info('Test payment timed out. Please check your order status.', {
+              duration: 6000
+            })
           } else {
-            toast.error('Payment timeout. Please check your M-Pesa messages or contact support.')
+            toast.info(
+              'Payment is being processed. Please check "My Orders" page to see your order status. If payment was successful, your order will appear there.',
+              {
+                duration: 8000,
+                action: {
+                  label: 'View Orders',
+                  onClick: () => navigate('/orders')
+                }
+              }
+            )
           }
         }
       } catch (error) {
@@ -457,7 +490,17 @@ const Checkout = () => {
           clearInterval(interval)
           setPollingInterval(null)
           setProcessingPayment(false)
-          toast.error('Payment status check failed after multiple attempts.')
+
+          toast.info(
+            'Unable to confirm payment status. Please check "My Orders" page. If you completed the M-Pesa payment, your order will appear there.',
+            {
+              duration: 8000,
+              action: {
+                label: 'View Orders',
+                onClick: () => navigate('/orders')
+              }
+            }
+          )
         }
       }
     }, isTestMode ? 2000 : 10000) // Check every 2 seconds in test mode, 10 in production
