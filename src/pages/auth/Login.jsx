@@ -6,10 +6,11 @@ import { ArrowLeft, ShoppingBag } from 'lucide-react'
 const Login = () => {
   const navigate = useNavigate()
   const location = useLocation()
-  const { login, googleLogin } = useAuth()
+  const { login } = useAuth()
 
   const [formData, setFormData] = useState({
-    email: '',
+    phone: '',
+    name: '',
     password: '',
   })
   const [loading, setLoading] = useState(false)
@@ -20,10 +21,28 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
+
+    // Validation
+    if (!formData.phone.trim()) {
+      setError('Phone number is required')
+      return
+    }
+
+    if (!formData.name.trim() && !formData.password) {
+      setError('Please provide either Name (for passwordless login) or Password')
+      return
+    }
+
     setLoading(true)
 
     try {
-      const result = await login(formData.email, formData.password)
+      const credentials = {
+        phone: formData.phone,
+        name: formData.name,
+        password: formData.password
+      }
+
+      const result = await login(credentials)
       if (result.success) {
         navigate(from, { replace: true })
       } else {
@@ -39,7 +58,8 @@ const Login = () => {
   const handleGoogleLogin = async () => {
     try {
       setLoading(true)
-      window.location.href = `${process.env.REACT_APP_API_URL}/auth/google`
+      const apiUrl = import.meta.env.VITE_API_URL || process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+      window.location.href = `${apiUrl}/auth/google`
     } catch (err) {
       setError('Google login failed')
     } finally {
@@ -50,7 +70,8 @@ const Login = () => {
   const handleFacebookLogin = async () => {
     try {
       setLoading(true)
-      window.location.href = `${process.env.REACT_APP_API_URL}/auth/facebook`
+      const apiUrl = import.meta.env.VITE_API_URL || process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+      window.location.href = `${apiUrl}/auth/facebook`
     } catch (err) {
       setError('Facebook login failed')
     } finally {
@@ -77,7 +98,7 @@ const Login = () => {
           <div className="mb-10">
             <div className="mb-4">
               <h1 className="text-3xl font-bold text-gray-900">Welcome back</h1>
-              <p className="text-gray-600 mt-2">Sign in to your account to continue shopping</p>
+              <p className="text-gray-600 mt-2">Sign in to your account with Phone & Name</p>
             </div>
           </div>
 
@@ -89,26 +110,42 @@ const Login = () => {
 
           <form className="space-y-6" onSubmit={handleSubmit}>
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                Email address
+              <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
+                Phone Number <span className="text-red-500">*</span>
               </label>
               <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
+                id="phone"
+                name="phone"
+                type="text"
+                autoComplete="tel"
                 required
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                value={formData.phone}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                 className="w-full px-4 py-3 border border-gray-200 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all duration-200"
-                placeholder="you@example.com"
+                placeholder="e.g., 0712345678"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+                Name <span className="text-gray-500">(Required for passwordless)</span>
+              </label>
+              <input
+                id="name"
+                name="name"
+                type="text"
+                autoComplete="name"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                className="w-full px-4 py-3 border border-gray-200 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all duration-200"
+                placeholder="Your Name"
               />
             </div>
 
             <div>
               <div className="flex items-center justify-between mb-2">
                 <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                  Password
+                  Password <span className="text-gray-500">(Optional)</span>
                 </label>
                 <Link
                   to="/forgot-password"
@@ -122,7 +159,6 @@ const Login = () => {
                 name="password"
                 type="password"
                 autoComplete="current-password"
-                required
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 className="w-full px-4 py-3 border border-gray-200 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all duration-200"

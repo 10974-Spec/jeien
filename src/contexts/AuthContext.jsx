@@ -28,7 +28,7 @@ export const AuthProvider = ({ children }) => {
     try {
       // Set auth header
       api.raw.defaults.headers.common['Authorization'] = `Bearer ${token}`
-      
+
       // Get user profile
       const response = await api.get('/auth/me')
       if (response.data.success) {
@@ -49,27 +49,27 @@ export const AuthProvider = ({ children }) => {
     loadUser()
   }, [loadUser])
 
-  const login = async (email, password) => {
+  const login = async (credentials) => {
     try {
-      console.log('Logging in with:', email)
-      
-      const response = await api.post('/auth/login', { email, password })
+      console.log('Logging in with:', credentials)
+
+      const response = await api.post('/auth/login', credentials)
       console.log('Login response:', response.data)
-      
+
       if (response.data.success && response.data.token) {
         const { token, user } = response.data
-        
+
         // Store in localStorage
         localStorage.setItem('token', token)
         localStorage.setItem('user', JSON.stringify(user))
-        
+
         // Set auth header
         api.raw.defaults.headers.common['Authorization'] = `Bearer ${token}`
-        
+
         // Update state
         setUser(user)
         setError(null)
-        
+
         return { success: true, user }
       } else {
         throw new Error(response.data.message || 'Login failed')
@@ -85,21 +85,21 @@ export const AuthProvider = ({ children }) => {
   const testLogin = async (email, password) => {
     try {
       console.log('Test login with:', email)
-      
+
       const response = await api.post('/auth/test-login', { email, password })
       console.log('Test login response:', response.data)
-      
+
       if (response.data.success && response.data.token) {
         const { token, user } = response.data
-        
+
         localStorage.setItem('token', token)
         localStorage.setItem('user', JSON.stringify(user))
-        
+
         api.raw.defaults.headers.common['Authorization'] = `Bearer ${token}`
-        
+
         setUser(user)
         setError(null)
-        
+
         return { success: true, user }
       }
     } catch (err) {
@@ -111,17 +111,17 @@ export const AuthProvider = ({ children }) => {
   const register = async (userData) => {
     try {
       const response = await api.post('/auth/register', userData)
-      
+
       if (response.data.success && response.data.token) {
         const { token, user } = response.data
-        
+
         localStorage.setItem('token', token)
         localStorage.setItem('user', JSON.stringify(user))
-        
+
         api.raw.defaults.headers.common['Authorization'] = `Bearer ${token}`
         setUser(user)
         setError(null)
-        
+
         return { success: true, user }
       } else {
         throw new Error(response.data.message || 'Registration failed')

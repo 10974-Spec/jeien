@@ -32,6 +32,17 @@ const Register = () => {
     e.preventDefault()
     setError('')
 
+    // Validate Name and Phone (Required)
+    if (!formData.name.trim()) {
+      setError('Name is required')
+      return
+    }
+
+    if (!formData.phone.trim()) {
+      setError('Phone number is required')
+      return
+    }
+
     // Only validate passwords if provided
     if (formData.password || formData.confirmPassword) {
       // Validate passwords match
@@ -148,14 +159,13 @@ const Register = () => {
 
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                Email address
+                Email address <span className="text-gray-500">(Optional)</span>
               </label>
               <input
                 id="email"
                 name="email"
                 type="email"
                 autoComplete="email"
-                required
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 className="w-full px-4 py-3 border border-gray-200 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all duration-200"
@@ -165,13 +175,14 @@ const Register = () => {
 
             <div>
               <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
-                Phone Number
+                Phone Number <span className="text-red-500">*</span>
               </label>
               <input
                 id="phone"
                 name="phone"
                 type="text"
                 autoComplete="tel"
+                required
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                 className="w-full px-4 py-3 border border-gray-200 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all duration-200"
