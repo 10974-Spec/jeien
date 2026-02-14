@@ -5,6 +5,9 @@ import AdminLayout from '../layouts/AdminLayout'
 import VendorLayout from '../layouts/VendorLayout'
 import PublicLayout from '../layouts/PublicLayout'
 
+import LoginSelection from '../pages/auth/LoginSelection'
+import BuyerLogin from '../pages/auth/BuyerLogin'
+import VendorLogin from '../pages/auth/VendorLogin'
 import Login from '../pages/auth/Login'
 import Register from '../pages/auth/Register'
 import ForgotPassword from '../pages/auth/ForgotPassword'
@@ -133,7 +136,17 @@ function AppRouter() {
       {/* Public Auth Routes */}
       <Route path="/login" element={
         <PublicRoute>
-          <Login />
+          <LoginSelection />
+        </PublicRoute>
+      } />
+      <Route path="/login/buyer" element={
+        <PublicRoute>
+          <BuyerLogin />
+        </PublicRoute>
+      } />
+      <Route path="/login/vendor" element={
+        <PublicRoute>
+          <VendorLogin />
         </PublicRoute>
       } />
       <Route path="/register" element={

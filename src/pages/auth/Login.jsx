@@ -99,6 +99,12 @@ const Login = () => {
             <div className="mb-4">
               <h1 className="text-3xl font-bold text-gray-900">Welcome back</h1>
               <p className="text-gray-600 mt-2">Sign in to your account with Phone & Name</p>
+              <p className="text-sm text-gray-500 mt-1">
+                <strong>Note:</strong> Admin accounts must use email & password.
+                <Link to="/admin/login" className="text-blue-600 hover:text-blue-700 ml-1">
+                  Admin Login →
+                </Link>
+              </p>
             </div>
           </div>
 
