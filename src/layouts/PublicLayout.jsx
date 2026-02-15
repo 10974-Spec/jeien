@@ -227,6 +227,31 @@ const Header = ({ user, isAuthenticated, handleLogout, getDashboardPath, userRol
                 </Button>
               )}
 
+              {/* Mobile Auth Buttons */}
+              <div className="sm:hidden flex items-center">
+                {isAuthenticated ? (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-gray-600 hover:text-red-600"
+                    onClick={handleLogout}
+                    title="Logout"
+                  >
+                    <LogOut className="h-5 w-5" />
+                  </Button>
+                ) : (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-gray-600 hover:text-blue-700"
+                    onClick={() => navigate('/login')}
+                    title="Sign In"
+                  >
+                    <User className="h-5 w-5" />
+                  </Button>
+                )}
+              </div>
+
               {/* Cart Button */}
               <Button
                 variant="ghost"
