@@ -179,7 +179,7 @@ const AdminLayout = ({ children }) => {
                 {sidebarOpen && (
                   <div className="flex-1 min-w-0">
                     <p className="font-medium truncate">{user?.name || 'Admin'}</p>
-                    <p className="text-blue-200 text-xs truncate">{user?.email || 'admin@jeien.com'}</p>
+                    <p className="text-blue-200 text-xs truncate">{user?.email || 'caprufru@gmail.com'}</p>
                   </div>
                 )}
               </div>

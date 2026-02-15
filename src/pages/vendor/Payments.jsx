@@ -141,8 +141,8 @@ const VendorPayments = () => {
                     </td>
                     <td className="py-4 px-4">
                       <span className={`px-3 py-1 rounded-full text-xs font-semibold ${payment.status === 'PAID'
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-yellow-100 text-yellow-800'
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-yellow-100 text-yellow-800'
                         }`}>
                         {payment.status}
                       </span>
@@ -214,7 +214,7 @@ const VendorPayments = () => {
               Need Help?
             </h4>
             <p className="text-sm text-yellow-800">
-              For payment-related inquiries or issues with payouts, contact support at <strong>payments@eshop.com</strong>
+              For payment-related inquiries or issues with payouts, contact support at <strong>caprufru@gmail.com</strong>
             </p>
           </div>
         </div>

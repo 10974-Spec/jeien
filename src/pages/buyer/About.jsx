@@ -1,8 +1,8 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { 
-  Store, Users, Target, Globe, Shield, Truck, 
+import {
+  Store, Users, Target, Globe, Shield, Truck,
   Award, Heart, Sparkles, CheckCircle, TrendingUp,
   Zap, Clock, Gift, Star, MapPin, Phone, Mail,
   Facebook, Twitter, Instagram, Linkedin
@@ -90,7 +90,7 @@ const AboutPage = () => {
               <Store className="h-4 w-4" />
               About JEIEN
             </motion.div>
-            
+
             <motion.h1
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -100,17 +100,17 @@ const AboutPage = () => {
               Connecting <span className="text-blue-600">Vendors</span> with{' '}
               <span className="text-blue-600">Customers</span>
             </motion.h1>
-            
+
             <motion.p
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.2 }}
               className="text-xl text-gray-600 mb-8"
             >
-              Kenya's premier marketplace platform, empowering thousands of businesses 
+              Kenya's premier marketplace platform, empowering thousands of businesses
               and serving millions of customers with quality products and seamless shopping experiences.
             </motion.p>
-            
+
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -250,7 +250,7 @@ const AboutPage = () => {
           <div className="relative max-w-4xl mx-auto">
             {/* Timeline line */}
             <div className="absolute left-1/2 transform -translate-x-1/2 h-full w-1 bg-gradient-to-b from-blue-500 to-blue-600" />
-            
+
             <div className="space-y-12">
               {milestones.map((milestone, index) => (
                 <motion.div
@@ -263,7 +263,7 @@ const AboutPage = () => {
                 >
                   {/* Timeline dot */}
                   <div className="absolute left-1/2 transform -translate-x-1/2 w-4 h-4 rounded-full bg-blue-600 border-4 border-white shadow-lg" />
-                  
+
                   {/* Content */}
                   <div className={`w-1/2 ${index % 2 === 0 ? 'pr-12 text-right' : 'pl-12'}`}>
                     <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
@@ -341,7 +341,7 @@ const AboutPage = () => {
               </div>
               <h3 className="text-lg font-bold text-gray-900 mb-2">Email</h3>
               <p className="text-gray-600">
-                support@jeien.com
+                caprufru@gmail.com
               </p>
             </motion.div>
           </div>
@@ -360,7 +360,7 @@ const AboutPage = () => {
             >
               Join the JEIEN Community
             </motion.h2>
-            
+
             <motion.p
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -370,7 +370,7 @@ const AboutPage = () => {
             >
               Whether you're looking to shop or sell, we've got you covered
             </motion.p>
-            
+
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}

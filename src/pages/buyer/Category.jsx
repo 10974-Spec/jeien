@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import productService from '../../services/product.service'
 import categoryService from '../../services/category.service'
+import Breadcrumb from '../../components/Breadcrumb'
 
 const Category = () => {
   const { id } = useParams()
@@ -32,15 +33,15 @@ const Category = () => {
   const fetchCategoryData = async () => {
     try {
       setLoading(true)
-      
+
       // Handle "all" category special case
       if (id === 'all') {
         setIsAllCategories(true)
-        
+
         // Fetch all categories
         const categoriesRes = await categoryService.getAllCategories({ limit: 20 })
         setAllCategories(categoriesRes.data.categories || [])
-        
+
         // Fetch all products without category filter
         const params = {
           page,
@@ -50,47 +51,47 @@ const Category = () => {
           sortBy: filters.sortBy,
           sortOrder: filters.sortOrder,
         }
-        
+
         const productsRes = await productService.getAllProducts(params)
         setProducts(productsRes.data.products || [])
         setTotalProducts(productsRes.data.total || 0)
         setTotalPages(productsRes.data.pages || 1)
-        
+
         setBreadcrumbs([
           { name: 'Home', path: '/' },
           { name: 'All Categories', path: '/category/all' }
         ])
-        
+
         return
       }
-      
+
       setIsAllCategories(false)
-      
+
       // Fetch category details for specific category
       const categoryRes = await categoryService.getCategoryById(id)
       const categoryData = categoryRes.data.category
-      
+
       if (!categoryData) {
         throw new Error('Category not found')
       }
-      
+
       setCategory(categoryData)
       setSubcategories(categoryData.children || [])
-      
+
       // Build breadcrumbs
       const bc = [{ name: 'Home', path: '/' }]
       if (categoryData.parent) {
         const parentRes = await categoryService.getCategoryById(categoryData.parent)
         if (parentRes.data.category) {
-          bc.push({ 
-            name: parentRes.data.category.name, 
-            path: `/category/${categoryData.parent}` 
+          bc.push({
+            name: parentRes.data.category.name,
+            path: `/category/${categoryData.parent}`
           })
         }
       }
       bc.push({ name: categoryData.name, path: `/category/${categoryData._id}` })
       setBreadcrumbs(bc)
-      
+
       // Fetch products for this category
       const params = {
         page,
@@ -101,12 +102,12 @@ const Category = () => {
         sortBy: filters.sortBy,
         sortOrder: filters.sortOrder,
       }
-      
+
       const productsRes = await productService.getAllProducts(params)
       setProducts(productsRes.data.products || [])
       setTotalProducts(productsRes.data.total || 0)
       setTotalPages(productsRes.data.pages || 1)
-      
+
     } catch (error) {
       console.error('Failed to fetch category data:', error)
       if (error.response?.status === 404) {
@@ -122,8 +123,8 @@ const Category = () => {
 
   const handleFilterChange = (e) => {
     const { name, value } = e.target
-    setFilters(prev => ({ 
-      ...prev, 
+    setFilters(prev => ({
+      ...prev,
       [name]: value === '' ? '' : parseFloat(value) || ''
     }))
     setPage(1) // Reset to first page when filters change
@@ -180,27 +181,7 @@ const Category = () => {
     return (
       <div className="min-h-screen bg-gray-50">
         {/* Breadcrumb */}
-        <div className="bg-white border-b border-gray-200">
-          <div className="container mx-auto px-4 py-3">
-            <nav className="flex items-center text-sm">
-              {breadcrumbs.map((item, index) => (
-                <React.Fragment key={item.path}>
-                  {index > 0 && <span className="mx-2 text-gray-400">/</span>}
-                  <Link
-                    to={item.path}
-                    className={`${
-                      index === breadcrumbs.length - 1
-                        ? 'text-gray-900 font-medium'
-                        : 'text-gray-600 hover:text-orange-600'
-                    }`}
-                  >
-                    {item.name}
-                  </Link>
-                </React.Fragment>
-              ))}
-            </nav>
-          </div>
-        </div>
+        <Breadcrumb items={breadcrumbs} />
 
         <div className="container mx-auto px-4 py-8">
           {/* All Categories Header */}
@@ -289,7 +270,7 @@ const Category = () => {
                       />
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center gap-4">
                     <select
                       value={filters.sortBy}
@@ -301,7 +282,7 @@ const Category = () => {
                       <option value="averageRating">Rating</option>
                       <option value="popularity">Popularity</option>
                     </select>
-                    
+
                     <button
                       onClick={clearFilters}
                       className="px-4 py-2 text-sm text-orange-600 hover:text-orange-700 font-medium"
@@ -391,18 +372,17 @@ const Category = () => {
                             </div>
                           </div>
                           <div className="mt-3">
-                            <span className={`text-sm font-medium ${
-                              product.stock > 10 
-                                ? 'text-green-600' 
-                                : product.stock > 0 
-                                ? 'text-yellow-600' 
+                            <span className={`text-sm font-medium ${product.stock > 10
+                              ? 'text-green-600'
+                              : product.stock > 0
+                                ? 'text-yellow-600'
                                 : 'text-red-600'
-                            }`}>
-                              {product.stock > 10 
-                                ? `${product.stock} in stock` 
-                                : product.stock > 0 
-                                ? `Only ${product.stock} left` 
-                                : 'Out of stock'
+                              }`}>
+                              {product.stock > 10
+                                ? `${product.stock} in stock`
+                                : product.stock > 0
+                                  ? `Only ${product.stock} left`
+                                  : 'Out of stock'
                               }
                             </span>
                           </div>
@@ -418,15 +398,14 @@ const Category = () => {
                         <button
                           onClick={() => setPage(p => Math.max(1, p - 1))}
                           disabled={page === 1}
-                          className={`px-4 py-2 rounded-lg border ${
-                            page === 1
-                              ? 'border-gray-200 text-gray-400 cursor-not-allowed'
-                              : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-                          }`}
+                          className={`px-4 py-2 rounded-lg border ${page === 1
+                            ? 'border-gray-200 text-gray-400 cursor-not-allowed'
+                            : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                            }`}
                         >
                           ← Previous
                         </button>
-                        
+
                         {page > 3 && (
                           <>
                             <button
@@ -438,28 +417,27 @@ const Category = () => {
                             <span className="px-2 text-gray-500">...</span>
                           </>
                         )}
-                        
+
                         {[...Array(Math.min(5, totalPages))].map((_, i) => {
-                          let pageNum = page <= 3 ? i + 1 : 
-                                       page >= totalPages - 2 ? totalPages - 4 + i :
-                                       page - 2 + i
+                          let pageNum = page <= 3 ? i + 1 :
+                            page >= totalPages - 2 ? totalPages - 4 + i :
+                              page - 2 + i
                           if (pageNum < 1 || pageNum > totalPages) return null
-                          
+
                           return (
                             <button
                               key={pageNum}
                               onClick={() => setPage(pageNum)}
-                              className={`px-4 py-2 rounded-lg border ${
-                                page === pageNum
-                                  ? 'bg-orange-500 border-orange-500 text-white'
-                                  : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-                              }`}
+                              className={`px-4 py-2 rounded-lg border ${page === pageNum
+                                ? 'bg-orange-500 border-orange-500 text-white'
+                                : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                                }`}
                             >
                               {pageNum}
                             </button>
                           )
                         })}
-                        
+
                         {page < totalPages - 2 && (
                           <>
                             <span className="px-2 text-gray-500">...</span>
@@ -471,15 +449,14 @@ const Category = () => {
                             </button>
                           </>
                         )}
-                        
+
                         <button
                           onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                           disabled={page === totalPages}
-                          className={`px-4 py-2 rounded-lg border ${
-                            page === totalPages
-                              ? 'border-gray-200 text-gray-400 cursor-not-allowed'
-                              : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-                          }`}
+                          className={`px-4 py-2 rounded-lg border ${page === totalPages
+                            ? 'border-gray-200 text-gray-400 cursor-not-allowed'
+                            : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                            }`}
                         >
                           Next →
                         </button>
@@ -501,8 +478,8 @@ const Category = () => {
         <div className="text-center">
           <h2 className="text-3xl font-bold text-gray-800 mb-4">Category not found</h2>
           <p className="text-gray-600 mb-6">The category you're looking for doesn't exist or has been removed.</p>
-          <Link 
-            to="/" 
+          <Link
+            to="/"
             className="inline-block px-6 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600"
           >
             Return to Home
@@ -515,27 +492,7 @@ const Category = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Breadcrumb */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="container mx-auto px-4 py-3">
-          <nav className="flex items-center text-sm">
-            {breadcrumbs.map((item, index) => (
-              <React.Fragment key={item.path}>
-                {index > 0 && <span className="mx-2 text-gray-400">/</span>}
-                <Link
-                  to={item.path}
-                  className={`${
-                    index === breadcrumbs.length - 1
-                      ? 'text-gray-900 font-medium'
-                      : 'text-gray-600 hover:text-orange-600'
-                  }`}
-                >
-                  {item.name}
-                </Link>
-              </React.Fragment>
-            ))}
-          </nav>
-        </div>
-      </div>
+      <Breadcrumb items={breadcrumbs} />
 
       <div className="container mx-auto px-4 py-8">
         {/* Category Header */}
@@ -568,7 +525,7 @@ const Category = () => {
                   )}
                 </div>
               </div>
-              
+
               {category.image && (
                 <div className="flex-shrink-0">
                   <img
@@ -627,7 +584,7 @@ const Category = () => {
                   Clear All
                 </button>
               </div>
-              
+
               <div className="space-y-6">
                 {/* Price Range */}
                 <div>
@@ -664,11 +621,10 @@ const Category = () => {
                   <div className="space-y-2">
                     <button
                       onClick={() => handleSortChange('createdAt')}
-                      className={`w-full text-left px-4 py-3 rounded-lg transition-colors flex items-center justify-between ${
-                        filters.sortBy === 'createdAt'
-                          ? 'bg-orange-50 text-orange-700 border border-orange-200'
-                          : 'bg-gray-50 hover:bg-gray-100 text-gray-700'
-                      }`}
+                      className={`w-full text-left px-4 py-3 rounded-lg transition-colors flex items-center justify-between ${filters.sortBy === 'createdAt'
+                        ? 'bg-orange-50 text-orange-700 border border-orange-200'
+                        : 'bg-gray-50 hover:bg-gray-100 text-gray-700'
+                        }`}
                     >
                       <span>Newest</span>
                       {filters.sortBy === 'createdAt' && (
@@ -677,14 +633,13 @@ const Category = () => {
                         </span>
                       )}
                     </button>
-                    
+
                     <button
                       onClick={() => handleSortChange('price')}
-                      className={`w-full text-left px-4 py-3 rounded-lg transition-colors flex items-center justify-between ${
-                        filters.sortBy === 'price'
-                          ? 'bg-orange-50 text-orange-700 border border-orange-200'
-                          : 'bg-gray-50 hover:bg-gray-100 text-gray-700'
-                      }`}
+                      className={`w-full text-left px-4 py-3 rounded-lg transition-colors flex items-center justify-between ${filters.sortBy === 'price'
+                        ? 'bg-orange-50 text-orange-700 border border-orange-200'
+                        : 'bg-gray-50 hover:bg-gray-100 text-gray-700'
+                        }`}
                     >
                       <span>Price</span>
                       {filters.sortBy === 'price' && (
@@ -693,14 +648,13 @@ const Category = () => {
                         </span>
                       )}
                     </button>
-                    
+
                     <button
                       onClick={() => handleSortChange('averageRating')}
-                      className={`w-full text-left px-4 py-3 rounded-lg transition-colors flex items-center justify-between ${
-                        filters.sortBy === 'averageRating'
-                          ? 'bg-orange-50 text-orange-700 border border-orange-200'
-                          : 'bg-gray-50 hover:bg-gray-100 text-gray-700'
-                      }`}
+                      className={`w-full text-left px-4 py-3 rounded-lg transition-colors flex items-center justify-between ${filters.sortBy === 'averageRating'
+                        ? 'bg-orange-50 text-orange-700 border border-orange-200'
+                        : 'bg-gray-50 hover:bg-gray-100 text-gray-700'
+                        }`}
                     >
                       <span>Rating</span>
                       {filters.sortBy === 'averageRating' && (
@@ -709,14 +663,13 @@ const Category = () => {
                         </span>
                       )}
                     </button>
-                    
+
                     <button
                       onClick={() => handleSortChange('popularity')}
-                      className={`w-full text-left px-4 py-3 rounded-lg transition-colors flex items-center justify-between ${
-                        filters.sortBy === 'popularity'
-                          ? 'bg-orange-50 text-orange-700 border border-orange-200'
-                          : 'bg-gray-50 hover:bg-gray-100 text-gray-700'
-                      }`}
+                      className={`w-full text-left px-4 py-3 rounded-lg transition-colors flex items-center justify-between ${filters.sortBy === 'popularity'
+                        ? 'bg-orange-50 text-orange-700 border border-orange-200'
+                        : 'bg-gray-50 hover:bg-gray-100 text-gray-700'
+                        }`}
                     >
                       <span>Popularity</span>
                       {filters.sortBy === 'popularity' && (
@@ -827,18 +780,17 @@ const Category = () => {
                           </div>
                         </div>
                         <div className="mt-3">
-                          <span className={`text-sm font-medium ${
-                            product.stock > 10 
-                              ? 'text-green-600' 
-                              : product.stock > 0 
-                              ? 'text-yellow-600' 
+                          <span className={`text-sm font-medium ${product.stock > 10
+                            ? 'text-green-600'
+                            : product.stock > 0
+                              ? 'text-yellow-600'
                               : 'text-red-600'
-                          }`}>
-                            {product.stock > 10 
-                              ? `${product.stock} in stock` 
-                              : product.stock > 0 
-                              ? `Only ${product.stock} left` 
-                              : 'Out of stock'
+                            }`}>
+                            {product.stock > 10
+                              ? `${product.stock} in stock`
+                              : product.stock > 0
+                                ? `Only ${product.stock} left`
+                                : 'Out of stock'
                             }
                           </span>
                         </div>
@@ -854,15 +806,14 @@ const Category = () => {
                       <button
                         onClick={() => setPage(p => Math.max(1, p - 1))}
                         disabled={page === 1}
-                        className={`px-4 py-2 rounded-lg border ${
-                          page === 1
-                            ? 'border-gray-200 text-gray-400 cursor-not-allowed'
-                            : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-                        }`}
+                        className={`px-4 py-2 rounded-lg border ${page === 1
+                          ? 'border-gray-200 text-gray-400 cursor-not-allowed'
+                          : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                          }`}
                       >
                         ← Previous
                       </button>
-                      
+
                       {page > 3 && (
                         <>
                           <button
@@ -874,28 +825,27 @@ const Category = () => {
                           <span className="px-2 text-gray-500">...</span>
                         </>
                       )}
-                      
+
                       {[...Array(Math.min(5, totalPages))].map((_, i) => {
-                        let pageNum = page <= 3 ? i + 1 : 
-                                     page >= totalPages - 2 ? totalPages - 4 + i :
-                                     page - 2 + i
+                        let pageNum = page <= 3 ? i + 1 :
+                          page >= totalPages - 2 ? totalPages - 4 + i :
+                            page - 2 + i
                         if (pageNum < 1 || pageNum > totalPages) return null
-                        
+
                         return (
                           <button
                             key={pageNum}
                             onClick={() => setPage(pageNum)}
-                            className={`px-4 py-2 rounded-lg border ${
-                              page === pageNum
-                                ? 'bg-orange-500 border-orange-500 text-white'
-                                : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-                            }`}
+                            className={`px-4 py-2 rounded-lg border ${page === pageNum
+                              ? 'bg-orange-500 border-orange-500 text-white'
+                              : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                              }`}
                           >
                             {pageNum}
                           </button>
                         )
                       })}
-                      
+
                       {page < totalPages - 2 && (
                         <>
                           <span className="px-2 text-gray-500">...</span>
@@ -907,15 +857,14 @@ const Category = () => {
                           </button>
                         </>
                       )}
-                      
+
                       <button
                         onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                         disabled={page === totalPages}
-                        className={`px-4 py-2 rounded-lg border ${
-                          page === totalPages
-                            ? 'border-gray-200 text-gray-400 cursor-not-allowed'
-                            : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-                        }`}
+                        className={`px-4 py-2 rounded-lg border ${page === totalPages
+                          ? 'border-gray-200 text-gray-400 cursor-not-allowed'
+                          : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                          }`}
                       >
                         Next →
                       </button>

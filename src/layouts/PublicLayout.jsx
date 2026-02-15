@@ -562,7 +562,7 @@ const PublicLayout = ({ children }) => {
             </div>
             <div>
               <h4 className="font-bold mb-4 text-white">Contact</h4>
-              <p className="text-blue-200">support@jeien.com</p>
+              <p className="text-blue-200">caprufru@gmail.com</p>
               <p className="text-blue-200">+254746917511</p>
             </div>
           </div>

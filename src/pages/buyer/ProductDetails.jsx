@@ -5,6 +5,7 @@ import { useCart } from '../../hooks/useCart'
 import useAnalytics from '../../hooks/useAnalytics'
 import productService from '../../services/product.service'
 import reviewService from '../../services/review.service'
+import Breadcrumb from '../../components/Breadcrumb'
 
 const ProductDetails = () => {
   const { id } = useParams()
@@ -172,31 +173,13 @@ const ProductDetails = () => {
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
       {/* Breadcrumb */}
-      <nav className="flex mb-6" aria-label="Breadcrumb">
-        <ol className="inline-flex items-center space-x-1 md:space-x-3">
-          <li className="inline-flex items-center">
-            <Link to="/" className="text-sm text-gray-700 hover:text-blue-600">
-              Home
-            </Link>
-          </li>
-          <li>
-            <div className="flex items-center">
-              <span className="mx-2 text-gray-400">/</span>
-              <Link to={`/category/${product.category?._id}`} className="text-sm text-gray-700 hover:text-blue-600">
-                {product.category?.name || 'Category'}
-              </Link>
-            </div>
-          </li>
-          <li aria-current="page">
-            <div className="flex items-center">
-              <span className="mx-2 text-gray-400">/</span>
-              <span className="text-sm font-medium text-gray-500 truncate max-w-xs">
-                {product.title}
-              </span>
-            </div>
-          </li>
-        </ol>
-      </nav>
+      <Breadcrumb
+        items={[
+          { name: 'Home', path: '/' },
+          { name: product.category?.name || 'Category', path: `/category/${product.category?._id}` },
+          { name: product.title }
+        ]}
+      />
 
       {/* Product Details */}
       <div className="bg-white rounded-lg shadow-lg overflow-hidden">

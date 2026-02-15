@@ -4,7 +4,7 @@ import settingsService from '../../services/settings.service';
 const AdminSettings = () => {
   const [settings, setSettings] = useState({
     siteName: 'jeien agencies',
-    siteEmail: 'support@jeien.com',
+    siteEmail: 'caprufru@gmail.com',
     sitePhone: '+254746917511',
     currency: 'KES',
     defaultCommission: 7, // Changed from 10 to 7
