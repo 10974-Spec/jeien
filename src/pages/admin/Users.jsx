@@ -7,6 +7,7 @@ const AdminUsers = () => {
   const [search, setSearch] = useState('')
   const [roleFilter, setRoleFilter] = useState('')
   const [deleteModal, setDeleteModal] = useState({ show: false, user: null })
+  const [viewModal, setViewModal] = useState({ show: false, user: null })
 
   useEffect(() => {
     fetchUsers()
@@ -39,6 +40,10 @@ const AdminUsers = () => {
 
   const handleDeleteClick = (user) => {
     setDeleteModal({ show: true, user })
+  }
+
+  const handleViewClick = (user) => {
+    setViewModal({ show: true, user })
   }
 
   const handleDeleteConfirm = async () => {
@@ -133,7 +138,10 @@ const AdminUsers = () => {
                     </td>
                     <td className="py-4">
                       <div className="flex gap-2">
-                        <button className="px-3 py-1 text-sm bg-gray-100 rounded hover:bg-gray-200">
+                        <button
+                          onClick={() => handleViewClick(user)}
+                          className="px-3 py-1 text-sm bg-gray-100 rounded hover:bg-gray-200"
+                        >
                           View Details
                         </button>
                         <button
@@ -173,6 +181,81 @@ const AdminUsers = () => {
                 className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
               >
                 Delete User
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* View Details Modal */}
+      {viewModal.show && viewModal.user && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 shadow-xl">
+            <div className="flex justify-between items-start mb-6">
+              <h3 className="text-xl font-bold text-gray-900">User Details</h3>
+              <button
+                onClick={() => setViewModal({ show: false, user: null })}
+                className="text-gray-400 hover:text-gray-500"
+              >
+                <span className="sr-only">Close</span>
+                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="flex flex-col items-center mb-6">
+              {viewModal.user.profileImage ? (
+                <img
+                  src={viewModal.user.profileImage}
+                  alt={viewModal.user.name}
+                  className="w-24 h-24 rounded-full border-4 border-blue-50 mb-4 object-cover"
+                />
+              ) : (
+                <div className="w-24 h-24 rounded-full bg-blue-100 flex items-center justify-center mb-4">
+                  <span className="text-3xl">👤</span>
+                </div>
+              )}
+              <h4 className="text-xl font-bold text-gray-900">{viewModal.user.name}</h4>
+              <span className={`px-3 py-1 rounded-full text-sm font-medium mt-2 ${viewModal.user.role === 'ADMIN' ? 'bg-red-100 text-red-800' :
+                viewModal.user.role === 'VENDOR' ? 'bg-blue-100 text-blue-800' :
+                  'bg-green-100 text-green-800'
+                }`}>
+                {viewModal.user.role}
+              </span>
+            </div>
+
+            <div className="space-y-4 border-t pt-4">
+              <div className="grid grid-cols-3 gap-2 text-sm">
+                <span className="text-gray-500 font-medium">Email:</span>
+                <span className="col-span-2 text-gray-900 break-all">{viewModal.user.email}</span>
+              </div>
+              <div className="grid grid-cols-3 gap-2 text-sm">
+                <span className="text-gray-500 font-medium">Phone:</span>
+                <span className="col-span-2 text-gray-900">{viewModal.user.phone || 'N/A'}</span>
+              </div>
+              <div className="grid grid-cols-3 gap-2 text-sm">
+                <span className="text-gray-500 font-medium">User ID:</span>
+                <span className="col-span-2 text-gray-900 font-mono text-xs">{viewModal.user._id}</span>
+              </div>
+              <div className="grid grid-cols-3 gap-2 text-sm">
+                <span className="text-gray-500 font-medium">Joined:</span>
+                <span className="col-span-2 text-gray-900">
+                  {new Date(viewModal.user.createdAt).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                  })}
+                </span>
+              </div>
+            </div>
+
+            <div className="mt-8 flex justify-end">
+              <button
+                onClick={() => setViewModal({ show: false, user: null })}
+                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium transition-colors"
+              >
+                Close
               </button>
             </div>
           </div>

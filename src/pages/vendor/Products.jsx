@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Eye, Trash2, Plus, Edit, Search, Filter, Image as ImageIcon } from 'lucide-react'
 import productService from '../../services/product.service'
 import categoryService from '../../services/category.service'
 
@@ -139,7 +140,8 @@ const VendorProducts = () => {
 
   const handleStockUpdate = async (productId, newStock) => {
     try {
-      await productService.updateStock(productId, { stock: newStock })
+      // FIXED: Use correct method name
+      await productService.updateProductStock(productId, { stock: newStock })
       await fetchProducts()
     } catch (error) {
       alert('Failed to update stock')
@@ -151,12 +153,13 @@ const VendorProducts = () => {
       <div className="space-y-6">
         {/* Header & Add Button */}
         <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold text-gray-900">My Products</h1>
+          <h1 className="text-2xl font-bold text-gray-900">My Products</h1>
           <button
             onClick={() => setShowForm(true)}
-            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm font-medium"
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm font-medium"
           >
-            + Add New Product
+            <Plus className="h-5 w-5" />
+            Add Product
           </button>
         </div>
 
@@ -246,20 +249,28 @@ const VendorProducts = () => {
 
               <div>
                 <label className="block text-sm font-semibold mb-2 text-gray-700">Product Images *</label>
-                <input
-                  type="file"
-                  onChange={handleImageChange}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  accept="image/*"
-                  multiple
-                  required
-                />
-                <p className="text-sm text-gray-600 mt-2">
-                  Upload up to 10 images. First image will be the main display image.
-                  {selectedImages.length > 0 && (
-                    <span className="text-green-600 font-semibold ml-2">({selectedImages.length} selected)</span>
-                  )}
-                </p>
+                <div className="flex items-center justify-center w-full">
+                  <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                      <ImageIcon className="w-8 h-8 mb-3 text-gray-400" />
+                      <p className="mb-2 text-sm text-gray-500"><span className="font-semibold">Click to upload</span> or drag and drop</p>
+                      <p className="text-xs text-gray-500">PNG, JPG or GIF (MAX. 10MB)</p>
+                    </div>
+                    <input
+                      type="file"
+                      className="hidden"
+                      onChange={handleImageChange}
+                      accept="image/*"
+                      multiple
+                      required={selectedImages.length === 0}
+                    />
+                  </label>
+                </div>
+                {selectedImages.length > 0 && (
+                  <div className="mt-2 text-sm text-green-600 font-medium">
+                    {selectedImages.length} image(s) selected
+                  </div>
+                )}
               </div>
 
               <div className="flex space-x-3 pt-2">
@@ -300,70 +311,78 @@ const VendorProducts = () => {
               <p className="text-sm mt-1">Create your first product to get started!</p>
             </div>
           ) : (
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="text-left py-4 px-6 text-sm font-semibold text-gray-700">Product</th>
-                  <th className="text-left py-4 px-6 text-sm font-semibold text-gray-700">Price</th>
-                  <th className="text-left py-4 px-6 text-sm font-semibold text-gray-700">Stock</th>
-                  <th className="text-left py-4 px-6 text-sm font-semibold text-gray-700">Status</th>
-                  <th className="text-left py-4 px-6 text-sm font-semibold text-gray-700">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {products.map((product) => (
-                  <tr key={product._id} className="hover:bg-gray-50 transition-colors">
-                    <td className="py-4 px-6">
-                      <div className="flex items-center">
-                        {product.images?.[0] && (
-                          <img
-                            src={product.images[0]}
-                            alt={product.title}
-                            className="w-14 h-14 object-cover rounded-lg mr-4 border border-gray-200"
-                          />
-                        )}
-                        <div>
-                          <p className="font-semibold text-gray-900">{product.title}</p>
-                          <p className="text-sm text-gray-500">{product.category?.name}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="py-4 px-6 font-medium text-gray-900">KES {product.price}</td>
-                    <td className="py-4 px-6">
-                      <input
-                        type="number"
-                        value={product.stock}
-                        onChange={(e) => handleStockUpdate(product._id, e.target.value)}
-                        className="w-20 px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        min="0"
-                      />
-                    </td>
-                    <td className="py-4 px-6">
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${product.approved ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                        }`}>
-                        {product.approved ? 'Approved' : 'Pending'}
-                      </span>
-                    </td>
-                    <td className="py-4 px-6">
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={() => navigate(`/product/${product._id}`)}
-                          className="px-4 py-1.5 text-sm bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors font-medium"
-                        >
-                          View
-                        </button>
-                        <button
-                          onClick={() => handleDelete(product._id)}
-                          className="px-4 py-1.5 text-sm bg-red-50 text-red-700 rounded-lg hover:bg-red-100 transition-colors font-medium"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </td>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="text-left py-4 px-6 text-sm font-semibold text-gray-700">Product</th>
+                    <th className="text-left py-4 px-6 text-sm font-semibold text-gray-700">Price</th>
+                    <th className="text-left py-4 px-6 text-sm font-semibold text-gray-700">Stock</th>
+                    <th className="text-left py-4 px-6 text-sm font-semibold text-gray-700">Status</th>
+                    <th className="text-left py-4 px-6 text-sm font-semibold text-gray-700">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {products.map((product) => (
+                    <tr key={product._id} className="hover:bg-gray-50 transition-colors">
+                      <td className="py-4 px-6">
+                        <div className="flex items-center">
+                          {product.images?.[0] ? (
+                            <img
+                              src={product.images[0]}
+                              alt={product.title}
+                              className="w-12 h-12 object-cover rounded-lg mr-4 border border-gray-200"
+                            />
+                          ) : (
+                            <div className="w-12 h-12 bg-gray-100 rounded-lg mr-4 border border-gray-200 flex items-center justify-center">
+                              <ImageIcon className="text-gray-400 w-6 h-6" />
+                            </div>
+                          )}
+                          <div>
+                            <p className="font-semibold text-gray-900 line-clamp-1">{product.title}</p>
+                            <p className="text-xs text-gray-500">{product.category?.name}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="py-4 px-6 font-medium text-gray-900">KES {product.price?.toLocaleString()}</td>
+                      <td className="py-4 px-6">
+                        <input
+                          type="number"
+                          value={product.stock}
+                          onChange={(e) => handleStockUpdate(product._id, e.target.value)}
+                          className="w-20 px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          min="0"
+                        />
+                      </td>
+                      <td className="py-4 px-6">
+                        <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${product.approved ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                          }`}>
+                          {product.approved ? 'Approved' : 'Pending'}
+                        </span>
+                      </td>
+                      <td className="py-4 px-6">
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => navigate(`/product/${product._id}`)}
+                            className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                            title="View"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(product._id)}
+                            className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Delete"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
       </div>
