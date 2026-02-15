@@ -521,21 +521,7 @@ export const Header = () => {
               </Button>
             ))}
 
-            {/* Categories */}
-            <div className="pt-4 border-t border-gray-200">
-              <p className="text-sm font-medium text-gray-700 mb-2 px-3">Categories</p>
-              {categories.map((cat) => (
-                <Button
-                  key={cat.name}
-                  variant="ghost"
-                  className="w-full justify-start text-gray-600 hover:text-blue-700 text-sm"
-                  asChild
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  <Link to={cat.path}>{cat.name}</Link>
-                </Button>
-              ))}
-            </div>
+
 
             {/* User Section */}
             <div className="pt-4 border-t border-gray-200 space-y-2">
