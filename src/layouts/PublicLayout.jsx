@@ -227,31 +227,6 @@ const Header = ({ user, isAuthenticated, handleLogout, getDashboardPath, userRol
                 </Button>
               )}
 
-              {/* Mobile Auth Buttons */}
-              <div className="sm:hidden flex items-center">
-                {isAuthenticated ? (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="text-gray-600 hover:text-red-600"
-                    onClick={handleLogout}
-                    title="Logout"
-                  >
-                    <LogOut className="h-5 w-5" />
-                  </Button>
-                ) : (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="text-gray-600 hover:text-blue-700"
-                    onClick={() => navigate('/login')}
-                    title="Sign In"
-                  >
-                    <User className="h-5 w-5" />
-                  </Button>
-                )}
-              </div>
-
               {/* Cart Button */}
               <Button
                 variant="ghost"
@@ -265,13 +240,15 @@ const Header = ({ user, isAuthenticated, handleLogout, getDashboardPath, userRol
                 </Badge>
               </Button>
 
-              <div className="hidden sm:flex items-center gap-2 pl-2 border-l border-gray-200">
+              {/* Unified User Actions (Desktop & Mobile) */}
+              <div className="flex items-center gap-1 sm:gap-2 sm:pl-2 sm:border-l sm:border-gray-200">
                 {isAuthenticated ? (
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1 sm:gap-2">
+                    {/* Profile & Dashboard - Hidden on very small screens to save space */}
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="gap-2 text-gray-600 hover:text-blue-700"
+                      className="hidden sm:flex gap-2 text-gray-600 hover:text-blue-700"
                       onClick={handleAccountClick}
                     >
                       <User className="h-4 w-4" />
@@ -280,30 +257,34 @@ const Header = ({ user, isAuthenticated, handleLogout, getDashboardPath, userRol
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="gap-2 text-gray-600 hover:text-blue-700"
+                      className="hidden sm:flex gap-2 text-gray-600 hover:text-blue-700"
                       onClick={handleDashboardClick}
                     >
                       <LayoutDashboard className="h-4 w-4" />
                       <span className="hidden lg:inline">Dashboard</span>
                     </Button>
+
+                    {/* Logout - Always visible */}
                     <Button
                       variant="ghost"
                       size="icon"
                       className="text-gray-600 hover:text-red-600"
                       onClick={handleLogout}
+                      title="Logout"
                     >
-                      <LogOut className="h-4 w-4" />
+                      <LogOut className="h-5 w-5" />
                     </Button>
                   </div>
                 ) : (
+                  // Sign In - Always visible
                   <Button
                     variant="ghost"
                     size="sm"
                     className="gap-2 text-gray-600 hover:text-blue-700"
                     onClick={handleAccountClick}
                   >
-                    <User className="h-4 w-4" />
-                    <span className="hidden lg:inline">Sign In</span>
+                    <User className="h-5 w-5 sm:h-4 sm:w-4" />
+                    <span className="hidden sm:inline">Sign In</span>
                   </Button>
                 )}
               </div>
