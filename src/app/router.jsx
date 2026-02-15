@@ -45,6 +45,7 @@ import Cart from '../pages/buyer/Cart'
 import Checkout from '../pages/buyer/Checkout'
 import BuyerProfile from '../pages/buyer/Profile'
 import BuyerOrders from '../pages/buyer/Orders'
+import OrderDetails from '../pages/buyer/OrderDetails'
 
 const PrivateRoute = ({ children, allowedRoles }) => {
   const { user, loading } = useContext(AuthContext)
@@ -216,6 +217,11 @@ function AppRouter() {
         <Route path="orders" element={
           <PrivateRoute allowedRoles={['buyer', 'vendor', 'admin']}>
             <BuyerOrders />
+          </PrivateRoute>
+        } />
+        <Route path="orders/:id" element={
+          <PrivateRoute allowedRoles={['buyer', 'vendor', 'admin']}>
+            <OrderDetails />
           </PrivateRoute>
         } />
 

@@ -146,7 +146,7 @@ const ProductCard = ({ product }) => {
 
   return (
     <motion.div
-      className="group relative"
+      className="group relative flex flex-col h-full border border-gray-200 bg-white"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => {
         setIsHovered(false)
@@ -156,8 +156,9 @@ const ProductCard = ({ product }) => {
       transition={{ duration: 0.2 }}
     >
       {/* Image Container with Link */}
-      <Link to={`/product/${product._id}`} className="block">
-        <div className="relative aspect-square rounded-2xl overflow-hidden bg-gray-100">
+      <Link to={`/product/${product._id}`} className="block relative">
+        <div className="aspect-square overflow-hidden bg-gray-100 relative">
+          {/* Image Navigation */}
           {isHovered && allImages.length > 1 && (
             <>
               <button
@@ -196,6 +197,7 @@ const ProductCard = ({ product }) => {
             }}
           />
 
+          {/* Badges */}
           {product.isNew && (
             <div className="absolute top-3 left-3 z-10">
               <Badge variant="secondary">New</Badge>
@@ -207,144 +209,105 @@ const ProductCard = ({ product }) => {
             </div>
           )}
 
-          {isHovered && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="absolute top-3 right-3 flex flex-col gap-2 z-10"
-              onClick={(e) => e.preventDefault()}
+          {/* Quick Actions Overlay (Wishlist/Eye) */}
+          <div className={`absolute top-3 right-3 flex flex-col gap-2 z-10 transition-opacity duration-200 ${isHovered ? 'opacity-100' : 'opacity-0'}`}>
+            <Button
+              size="sm"
+              variant="secondary"
+              className={`h-8 w-8 rounded-full p-0 shadow-sm ${inWishlist ? 'bg-red-100 hover:bg-red-200' : ''}`}
+              onClick={handleToggleWishlist}
             >
-              <Button
-                size="sm"
-                variant="secondary"
-                className={`h-8 w-8 rounded-full p-0 ${inWishlist ? 'bg-red-100 hover:bg-red-200' : ''}`}
-                onClick={handleToggleWishlist}
-              >
-                <Heart className={`h-4 w-4 ${inWishlist ? 'fill-red-500 text-red-500' : ''}`} />
-              </Button>
-              <Button
-                size="sm"
-                variant="secondary"
-                className="h-8 w-8 rounded-full p-0"
-                onClick={(e) => {
-                  e.preventDefault()
-                  e.stopPropagation()
-                  // Quick view logic here
-                }}
-              >
-                <Eye className="h-4 w-4" />
-              </Button>
-            </motion.div>
-          )}
+              <Heart className={`h-4 w-4 ${inWishlist ? 'fill-red-500 text-red-500' : ''}`} />
+            </Button>
+            <Button
+              size="sm"
+              variant="secondary"
+              className="h-8 w-8 rounded-full p-0 shadow-sm"
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                // Quick view logic
+              }}
+            >
+              <Eye className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </Link>
 
-      {/* Content - FIXED: Don't wrap in Link */}
-      {!isHovered ? (
-        <div className="mt-3 px-1">
-          <Link to={`/product/${product._id}`} className="block">
-            <h3 className="font-medium text-sm line-clamp-1 hover:text-blue-700 transition-colors">
-              {product.title}
-            </h3>
+      {/* Product Details - Always Visible */}
+      <div className="mt-3 px-1 flex flex-col flex-grow p-2">
+        {/* Vendor */}
+        {product.vendor && (
+          <Link
+            to={`/vendor/${product.vendor?._id}`}
+            className="text-xs text-gray-500 hover:text-blue-700 transition-colors block mb-1"
+          >
+            {product.vendor?.storeName || product.vendor?.name || 'Unknown Vendor'}
           </Link>
-          <div className="flex items-center gap-2 mt-1">
-            <span className="font-bold text-lg text-blue-700">
-              KES {product.price?.toLocaleString()}
-            </span>
-            {product.comparePrice && product.comparePrice > product.price && (
-              <span className="text-sm text-gray-500 line-through">
-                KES {product.comparePrice.toLocaleString()}
-              </span>
-            )}
+        )}
+
+        {/* Title */}
+        <Link to={`/product/${product._id}`} className="block mb-1">
+          <h3 className="font-medium text-sm line-clamp-2 hover:text-blue-700 transition-colors" title={product.title}>
+            {product.title}
+          </h3>
+        </Link>
+
+        {/* Rating */}
+        <div className="flex items-center gap-1 mb-2">
+          <div className="flex items-center">
+            {[...Array(5)].map((_, i) => (
+              <Star
+                key={i}
+                className={`h-3 w-3 ${i < Math.floor(product.averageRating || 0)
+                  ? 'text-yellow-400 fill-yellow-400'
+                  : 'text-gray-300'
+                  }`}
+              />
+            ))}
           </div>
-          {product.allowWholesale && product.wholesalePrice && (
-            <div className="mt-1">
-              <span className="text-xs text-green-600 font-medium">
-                Wholesale: KES {product.wholesalePrice?.toLocaleString()} (Min: {product.minWholesaleQuantity || 10})
-              </span>
-            </div>
+          <span className="text-xs text-gray-500">({product.reviewCount || 0})</span>
+        </div>
+
+        {/* Price */}
+        <div className="flex items-center gap-2 mt-auto">
+          <span className="font-bold text-lg text-blue-700">
+            KES {product.price?.toLocaleString()}
+          </span>
+          {product.comparePrice && product.comparePrice > product.price && (
+            <span className="text-sm text-gray-500 line-through">
+              KES {product.comparePrice.toLocaleString()}
+            </span>
           )}
         </div>
-      ) : (
-        <motion.div
-          initial={{ opacity: 0, y: 10, scale: 0.95 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          className="absolute left-0 right-0 -bottom-2 z-20 mx-1 p-4 rounded-2xl bg-white/80 backdrop-blur-xl border border-white/20 shadow-xl"
+
+        {/* Wholesale Info */}
+        {product.allowWholesale && product.wholesalePrice && (
+          <div className="mt-2 text-xs text-green-700 bg-green-50 p-1.5 rounded border border-green-200">
+            Wholesale: <strong>KES {product.wholesalePrice?.toLocaleString()}</strong>
+            <span className="block text-[10px] text-green-600">Min: {product.minWholesaleQuantity || 10} units</span>
+          </div>
+        )}
+
+        {/* Stock Status */}
+        <div className="mt-2 text-xs text-green-600 flex items-center gap-1">
+          <span className={`w-1.5 h-1.5 rounded-full ${product.stock > 0 ? 'bg-green-600' : 'bg-red-600'}`} />
+          {product.stock > 0 ? 'In Stock' : 'Out of Stock'}
+        </div>
+
+        {/* Add to Cart Button */}
+        <Button
+          className="w-full mt-3 gap-2 whitespace-nowrap"
+          size="sm"
+          onClick={handleAddToCart}
+          disabled={product.stock === 0}
+          loading={addingToCart}
         >
-          {product.vendor && (
-            <Link
-              to={`/vendor/${product.vendor?._id}`}
-              className="text-xs text-gray-500 hover:text-blue-700 transition-colors block"
-            >
-              {product.vendor?.storeName || product.vendor?.name || 'Unknown Vendor'}
-            </Link>
-          )}
-
-          <Link to={`/product/${product._id}`}>
-            <h3 className="font-medium text-sm mt-1 line-clamp-2 hover:text-blue-700 transition-colors">
-              {product.title}
-            </h3>
-          </Link>
-
-          <div className="flex items-center gap-1 mt-2">
-            <div className="flex items-center">
-              {[...Array(5)].map((_, i) => (
-                <Star
-                  key={i}
-                  className={`h-3 w-3 ${i < Math.floor(product.averageRating || 0)
-                    ? 'text-yellow-400 fill-yellow-400'
-                    : 'text-gray-300'
-                    }`}
-                />
-              ))}
-            </div>
-            <span className="text-xs text-gray-500">({product.reviewCount || 0})</span>
-          </div>
-
-          <div className="flex items-center gap-2 mt-2">
-            <span className="font-bold text-lg text-blue-700">
-              KES {product.price?.toLocaleString()}
-            </span>
-            {product.comparePrice && product.comparePrice > product.price && (
-              <span className="text-sm text-gray-500 line-through">
-                KES {product.comparePrice.toLocaleString()}
-              </span>
-            )}
-          </div>
-
-          {product.allowWholesale && product.wholesalePrice && (
-            <div className="mt-1.5 px-2 py-1 bg-green-50 rounded-lg border border-green-200">
-              <div className="flex items-center gap-1">
-                <span className="text-xs font-semibold text-green-700">Wholesale:</span>
-                <span className="text-xs font-bold text-green-800">
-                  KES {product.wholesalePrice?.toLocaleString()}
-                </span>
-              </div>
-              <span className="text-[10px] text-green-600">
-                Min. {product.minWholesaleQuantity || 10} units
-              </span>
-            </div>
-          )}
-
-          <div className="mt-2">
-            <span className="text-xs text-green-600 flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-green-600" />
-              {product.stock > 0 ? 'In Stock' : 'Out of Stock'}
-            </span>
-          </div>
-
-          <Button
-            className="w-full mt-3 gap-2"
-            size="sm"
-            onClick={handleAddToCart}
-            disabled={product.stock === 0}
-            loading={addingToCart}
-          >
-            <ShoppingCart className="h-4 w-4" />
-            {product.stock > 0 ? 'Add to Cart' : 'Out of Stock'}
-          </Button>
-        </motion.div>
-      )}
+          <ShoppingCart className="h-4 w-4" />
+          {product.stock > 0 ? 'Add to Cart' : 'Out of Stock'}
+        </Button>
+      </div>
     </motion.div>
   )
 }
@@ -503,7 +466,7 @@ const CategorySection = ({ categories, loading }) => {
           <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-3">
             {[...Array(14)].map((_, index) => (
               <div key={index} className="animate-pulse">
-                <div className="aspect-square rounded-2xl bg-gray-200 mb-3"></div>
+                <div className="aspect-square bg-gray-200 mb-3"></div>
                 <div className="h-4 bg-gray-200 rounded mb-1"></div>
                 <div className="h-3 bg-gray-200 rounded w-1/2"></div>
               </div>
@@ -535,7 +498,7 @@ const CategorySection = ({ categories, loading }) => {
           <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-3">
             {[...Array(14)].map((_, index) => (
               <div key={index} className="animate-pulse">
-                <div className="aspect-square rounded-2xl bg-gray-200 mb-3"></div>
+                <div className="aspect-square bg-gray-200 mb-3"></div>
                 <div className="h-4 bg-gray-200 rounded mb-1"></div>
                 <div className="h-3 bg-gray-200 rounded w-1/2"></div>
               </div>
@@ -559,9 +522,9 @@ const CategorySection = ({ categories, loading }) => {
                 >
                   <Link
                     to={`/category/${category._id}`}
-                    className="group flex flex-col items-center p-4 rounded-2xl bg-white border border-gray-200 hover:border-blue-500/20 hover:shadow-lg transition-all duration-300"
+                    className="group flex flex-col items-center p-4 bg-white border border-gray-200 hover:border-blue-500/20 hover:shadow-lg transition-all duration-300"
                   >
-                    <div className={`w-14 h-14 rounded-xl mb-3 overflow-hidden ${!hasImage ? categoryData.gradient + ' flex items-center justify-center' : ''}`}>
+                    <div className={`w-14 h-14 mb-3 overflow-hidden ${!hasImage ? categoryData.gradient + ' flex items-center justify-center' : ''}`}>
                       {hasImage ? (
                         <img
                           src={categoryData.image}
@@ -650,7 +613,7 @@ const DealsSection = ({ deals, loading }) => {
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             {[...Array(4)].map((_, index) => (
               <div key={index} className="animate-pulse">
-                <div className="aspect-square rounded-2xl bg-gray-200 mb-3"></div>
+                <div className="aspect-square bg-gray-200 mb-3"></div>
                 <div className="h-6 bg-gray-200 rounded mb-2"></div>
                 <div className="h-4 bg-gray-200 rounded mb-2"></div>
                 <div className="h-10 bg-gray-200 rounded"></div>
@@ -692,7 +655,7 @@ const DealsSection = ({ deals, loading }) => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: index * 0.1 }}
-              className="group bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-lg transition-all duration-300"
+              className="group bg-white border border-gray-200 overflow-hidden hover:shadow-lg transition-all duration-300"
             >
               <Link to={`/product/${deal._id}`} className="block">
                 <div className="relative aspect-square bg-gray-100 overflow-hidden">
@@ -763,10 +726,10 @@ const FeaturedProducts = ({ products, loading }) => {
               </div>
             </div>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {[...Array(8)].map((_, index) => (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
+            {[...Array(12)].map((_, index) => (
               <div key={index} className="animate-pulse">
-                <div className="aspect-square rounded-2xl bg-gray-200 mb-3"></div>
+                <div className="aspect-square bg-gray-200 mb-3"></div>
                 <div className="h-4 bg-gray-200 rounded mb-2"></div>
                 <div className="h-6 bg-gray-200 rounded w-1/2"></div>
               </div>
@@ -799,8 +762,8 @@ const FeaturedProducts = ({ products, loading }) => {
           </Button>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 lg:gap-6">
-          {products.slice(0, 8).map((product, index) => (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 lg:gap-6">
+          {products.slice(0, 12).map((product, index) => (
             <motion.div
               key={product._id || index}
               initial={{ opacity: 0, y: 20 }}
@@ -868,7 +831,7 @@ const PromoBanner = ({ banners, loading, position = null }) => {
                 initial={{ opacity: 0, x: index === 0 ? -20 : 20 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
-                className={`relative overflow-hidden rounded-2xl ${index === 0 ? 'bg-gradient-to-br from-blue-700 to-blue-800' : 'bg-gradient-to-br from-blue-800 to-blue-900'} p-6 lg:p-8 text-white`}
+                className={`relative overflow-hidden ${index === 0 ? 'bg-gradient-to-br from-blue-700 to-blue-800' : 'bg-gradient-to-br from-blue-800 to-blue-900'} p-6 lg:p-8 text-white`}
               >
                 <div className="relative z-10">
                   <span className="inline-block px-3 py-1 rounded-full bg-white/20 text-xs font-medium mb-4">
@@ -900,9 +863,9 @@ const PromoBanner = ({ banners, loading, position = null }) => {
             <motion.div
               key={banner._id || index}
               initial={{ opacity: 0, x: index === 0 ? -20 : 20 }}
-              whileInView={{ opacity: 1, x: 0 }}
+              whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              className={`relative overflow-hidden rounded-2xl ${index === 0 ? 'bg-gradient-to-br from-blue-700 to-blue-800' : 'bg-gradient-to-br from-blue-800 to-blue-900'} p-6 lg:p-8 text-white`}
+              className={`relative overflow-hidden ${index === 0 ? 'bg-gradient-to-br from-blue-700 to-blue-800' : 'bg-gradient-to-br from-blue-800 to-blue-900'} p-6 lg:p-8 text-white`}
             >
               <div className="relative z-10">
                 <span className="inline-block px-3 py-1 rounded-full bg-white/20 text-xs font-medium mb-4">
@@ -980,10 +943,10 @@ const ProductsDisplay = ({ title, icon: Icon, description, products, seeMoreLink
               </div>
             </div>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {[...Array(8)].map((_, index) => (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
+            {[...Array(12)].map((_, index) => (
               <div key={index} className="animate-pulse">
-                <div className="aspect-square rounded-2xl bg-gray-200 mb-3"></div>
+                <div className="aspect-square bg-gray-200 mb-3"></div>
                 <div className="h-4 bg-gray-200 rounded mb-2"></div>
                 <div className="h-6 bg-gray-200 rounded w-1/2"></div>
               </div>
@@ -1018,8 +981,8 @@ const ProductsDisplay = ({ title, icon: Icon, description, products, seeMoreLink
           )}
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 lg:gap-6">
-          {products.slice(0, 8).map((product, index) => (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 lg:gap-6">
+          {products.slice(0, 12).map((product, index) => (
             <motion.div
               key={product._id || index}
               initial={{ opacity: 0, y: 20 }}
@@ -1461,9 +1424,10 @@ const BuyerHome = () => {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="lg:col-span-2 relative rounded-2xl overflow-hidden bg-gradient-to-br from-blue-100 to-blue-200 min-h-[320px] lg:min-h-[400px]"
+              className="lg:col-span-2 relative overflow-hidden bg-gradient-to-br from-blue-100 to-blue-200 min-h-[320px] lg:min-h-[400px]"
             >
-              {homeTopBanners.length > 0 ? (
+              {/* Dynamic Main Banner */}
+              {homeTopBanners[0] ? (
                 <>
                   <div className="absolute inset-0">
                     <img
@@ -1482,7 +1446,7 @@ const BuyerHome = () => {
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: 0.2 }}
-                      className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 backdrop-blur-sm text-white text-sm font-medium w-fit mb-4"
+                      className="inline-flex items-center gap-2 px-3 py-1 bg-white/20 backdrop-blur-sm text-white text-sm font-medium w-fit mb-4"
                     >
                       <Sparkles className="h-4 w-4" />
                       {homeTopBanners[0].label || 'Limited Time Offer'}
@@ -1525,7 +1489,7 @@ const BuyerHome = () => {
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.2 }}
-                    className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 backdrop-blur-sm text-gray-900 text-sm font-medium w-fit mb-4"
+                    className="inline-flex items-center gap-2 px-3 py-1 bg-white/20 backdrop-blur-sm text-gray-900 text-sm font-medium w-fit mb-4"
                   >
                     <Sparkles className="h-4 w-4" />
                     Welcome to JEIEN
@@ -1570,39 +1534,91 @@ const BuyerHome = () => {
 
             {/* Side Banners */}
             <div className="flex flex-col gap-4">
-              <motion.div
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.3 }}
-                className="flex-1 rounded-2xl overflow-hidden bg-gradient-to-br from-blue-100 to-blue-200 p-6 relative"
-              >
-                <div className="relative z-10">
-                  <span className="text-xs font-semibold text-blue-700 uppercase tracking-wider">New Arrivals</span>
-                  <h3 className="text-xl font-bold mt-2 mb-3 text-gray-900">Fresh Products</h3>
-                  <p className="text-sm text-gray-600 mb-4">New items added daily</p>
-                  <Button variant="secondary" size="sm" className="gap-1" href="/search?sort=newest">
-                    Explore <ArrowRight className="h-3 w-3" />
-                  </Button>
-                </div>
-              </motion.div>
+              {/* Top Side Banner */}
+              {homeTopBanners[1] ? (
+                <motion.div
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.3 }}
+                  className="flex-1 overflow-hidden bg-gray-100 relative group"
+                >
+                  <div className="absolute inset-0">
+                    <img
+                      src={homeTopBanners[1].image}
+                      alt={homeTopBanners[1].title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                    <div className="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition-colors" />
+                  </div>
+                  <div className="relative z-10 h-full flex flex-col justify-end p-6 text-white">
+                    <span className="text-xs font-semibold uppercase tracking-wider mb-1">{homeTopBanners[1].label || 'Featured'}</span>
+                    <h3 className="text-xl font-bold mb-2 leading-tight">{homeTopBanners[1].title}</h3>
+                    <Button variant="secondary" size="sm" className="w-fit" href={homeTopBanners[1].link}>
+                      Shop Now
+                    </Button>
+                  </div>
+                </motion.div>
+              ) : (
+                <motion.div
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.3 }}
+                  className="flex-1 overflow-hidden bg-gradient-to-br from-blue-100 to-blue-200 p-6 relative"
+                >
+                  <div className="relative z-10">
+                    <span className="text-xs font-semibold text-blue-700 uppercase tracking-wider">New Arrivals</span>
+                    <h3 className="text-xl font-bold mt-2 mb-3 text-gray-900">Fresh Products</h3>
+                    <p className="text-sm text-gray-600 mb-4">New items added daily</p>
+                    <Button variant="secondary" size="sm" className="gap-1" href="/search?sort=newest">
+                      Explore <ArrowRight className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </motion.div>
+              )}
 
-              <motion.div
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.4 }}
-                className="flex-1 rounded-2xl overflow-hidden bg-gradient-to-r from-blue-700 to-blue-800 p-6 text-white relative"
-              >
-                <div className="relative z-10">
-                  <span className="text-xs font-semibold uppercase tracking-wider opacity-90">Flash Sale</span>
-                  <h3 className="text-xl font-bold mt-2 mb-1">
-                    20% OFF
-                  </h3>
-                  <p className="text-sm opacity-90 mb-4">On selected categories</p>
-                  <Button variant="secondary" size="sm" className="gap-1 bg-white text-gray-900 hover:bg-white/90" href="/search?deals=flash">
-                    Shop Now <ArrowRight className="h-3 w-3" />
-                  </Button>
-                </div>
-              </motion.div>
+              {/* Bottom Side Banner */}
+              {homeTopBanners[2] ? (
+                <motion.div
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.4 }}
+                  className="flex-1 overflow-hidden bg-gray-100 relative group"
+                >
+                  <div className="absolute inset-0">
+                    <img
+                      src={homeTopBanners[2].image}
+                      alt={homeTopBanners[2].title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                    <div className="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition-colors" />
+                  </div>
+                  <div className="relative z-10 h-full flex flex-col justify-end p-6 text-white">
+                    <span className="text-xs font-semibold uppercase tracking-wider mb-1">{homeTopBanners[2].label || 'Hot Deal'}</span>
+                    <h3 className="text-xl font-bold mb-2 leading-tight">{homeTopBanners[2].title}</h3>
+                    <Button variant="secondary" size="sm" className="w-fit" href={homeTopBanners[2].link}>
+                      View Offer
+                    </Button>
+                  </div>
+                </motion.div>
+              ) : (
+                <motion.div
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.4 }}
+                  className="flex-1 overflow-hidden bg-gradient-to-r from-blue-700 to-blue-800 p-6 text-white relative"
+                >
+                  <div className="relative z-10">
+                    <span className="text-xs font-semibold uppercase tracking-wider opacity-90">Flash Sale</span>
+                    <h3 className="text-xl font-bold mt-2 mb-1">
+                      20% OFF
+                    </h3>
+                    <p className="text-sm opacity-90 mb-4">On selected categories</p>
+                    <Button variant="secondary" size="sm" className="gap-1 bg-white text-gray-900 hover:bg-white/90" href="/search?deals=flash">
+                      Shop Now <ArrowRight className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </motion.div>
+              )}
             </div>
           </div>
         </div>
@@ -1667,7 +1683,7 @@ const BuyerHome = () => {
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-900 to-blue-800 p-8 lg:p-12 text-white"
+            className="relative overflow-hidden bg-gradient-to-r from-blue-900 to-blue-800 p-8 lg:p-12 text-white"
           >
             <div className="relative z-10 text-center max-w-2xl mx-auto">
               <h3 className="text-3xl lg:text-4xl font-bold mb-4">

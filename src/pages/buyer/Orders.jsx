@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import orderService from '../../services/order.service'
+import invoiceService from '../../services/invoice.service'
+import toast from 'react-hot-toast'
 
 const Orders = () => {
   const [orders, setOrders] = useState([])
@@ -33,6 +35,25 @@ const Orders = () => {
       top: 0,
       behavior: 'smooth'
     })
+  }
+
+  const [downloadingInvoice, setDownloadingInvoice] = useState(null)
+
+  const handleDownloadInvoice = async (orderId) => {
+    try {
+      setDownloadingInvoice(orderId)
+      const blob = await invoiceService.downloadInvoice(orderId)
+      // Find order to get ID for filename
+      const order = orders.find(o => o._id === orderId)
+      const filename = `invoice-${order?.orderId || orderId}.pdf`
+      invoiceService.triggerDownload(blob, filename)
+      toast.success('Invoice downloaded successfully')
+    } catch (error) {
+      console.error('Failed to download invoice:', error)
+      toast.error('Failed to download invoice')
+    } finally {
+      setDownloadingInvoice(null)
+    }
   }
 
   const fetchOrders = async () => {
@@ -214,14 +235,20 @@ const Orders = () => {
                           Cancel Order
                         </button>
                       )}
-                      <a
-                        href={`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/invoices/${order._id}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-block px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                      <button
+                        onClick={() => handleDownloadInvoice(order._id)}
+                        disabled={downloadingInvoice === order._id}
+                        className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        Download Invoice
-                      </a>
+                        {downloadingInvoice === order._id ? (
+                          <>
+                            <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full mr-2" />
+                            Downloading...
+                          </>
+                        ) : (
+                          'Download Invoice'
+                        )}
+                      </button>
                       <Link
                         to={`/orders/${order._id}`}
                         className="px-4 py-2 bg-gray-800 text-white rounded hover:bg-gray-900"
@@ -238,18 +265,20 @@ const Orders = () => {
       </div>
 
       {/* Scroll to Top Button */}
-      {showScrollTop && (
-        <button
-          onClick={scrollToTop}
-          className="fixed bottom-6 right-6 z-50 p-3 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 hover:shadow-xl transition-all duration-300 transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-          aria-label="Scroll to top"
-        >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
-          </svg>
-        </button>
-      )}
-    </div>
+      {
+        showScrollTop && (
+          <button
+            onClick={scrollToTop}
+            className="fixed bottom-6 right-6 z-50 p-3 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 hover:shadow-xl transition-all duration-300 transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            aria-label="Scroll to top"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
+            </svg>
+          </button>
+        )
+      }
+    </div >
   )
 }
 

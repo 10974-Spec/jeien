@@ -4,23 +4,27 @@ const bannerService = {
   createAd: (adData) => {
     console.log('bannerService.createAd called');
     console.log('Is FormData?', adData instanceof FormData);
-    
+
     if (adData instanceof FormData) {
       console.log('Using FormData upload');
-      
+
       // Debug: Log FormData contents
       console.log('FormData entries:');
       for (let [key, value] of adData.entries()) {
         console.log(`${key}:`, value instanceof File ? `[File: ${value.name}]` : value);
       }
-      
-      return api.post('/ads', adData)
+
+      return api.post('/ads', adData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      })
         .catch(error => {
           console.error('Create ad FormData error:', error.response || error);
           throw error;
         });
     }
-    
+
     console.log('Using JSON upload');
     return api.post('/ads', adData)
       .catch(error => {
@@ -28,7 +32,7 @@ const bannerService = {
         throw error;
       });
   },
-  
+
   getAllAds: (params = {}) => {
     return api.get('/ads', { params })
       .catch(error => {
@@ -36,7 +40,7 @@ const bannerService = {
         throw error;
       });
   },
-  
+
   getAdById: (id) => {
     return api.get(`/ads/${id}`)
       .catch(error => {
@@ -44,7 +48,7 @@ const bannerService = {
         throw error;
       });
   },
-  
+
   updateAd: (id, adData) => {
     if (adData instanceof FormData) {
       return api.put(`/ads/${id}`, adData)
@@ -59,7 +63,7 @@ const bannerService = {
         throw error;
       });
   },
-  
+
   deleteAd: (id) => {
     return api.delete(`/ads/${id}`)
       .catch(error => {
@@ -67,7 +71,7 @@ const bannerService = {
         throw error;
       });
   },
-  
+
   getActiveAds: (params) => {
     return api.get('/ads/active', { params })
       .catch(error => {
@@ -75,7 +79,7 @@ const bannerService = {
         throw error;
       });
   },
-  
+
   trackAdView: (id) => {
     return api.post(`/ads/${id}/view`)
       .catch(error => {
@@ -83,7 +87,7 @@ const bannerService = {
         throw error;
       });
   },
-  
+
   trackAdClick: (id) => {
     return api.post(`/ads/${id}/click`)
       .catch(error => {
@@ -91,7 +95,7 @@ const bannerService = {
         throw error;
       });
   },
-  
+
   getAdAnalytics: (id) => {
     return api.get(`/ads/${id}/analytics`)
       .catch(error => {
@@ -99,7 +103,7 @@ const bannerService = {
         throw error;
       });
   },
-  
+
   approveAd: (id, data) => {
     return api.put(`/ads/${id}/approve`, data)
       .catch(error => {
