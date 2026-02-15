@@ -240,7 +240,6 @@ const Header = ({ user, isAuthenticated, handleLogout, getDashboardPath, userRol
                 </Badge>
               </Button>
 
-              {/* Desktop User Actions */}
               <div className="hidden sm:flex items-center gap-2 pl-2 border-l border-gray-200">
                 {isAuthenticated ? (
                   <div className="flex items-center gap-2">
@@ -280,6 +279,31 @@ const Header = ({ user, isAuthenticated, handleLogout, getDashboardPath, userRol
                   >
                     <User className="h-4 w-4" />
                     <span className="hidden lg:inline">Sign In</span>
+                  </Button>
+                )}
+              </div>
+
+              {/* Mobile Auth Buttons */}
+              <div className="sm:hidden flex items-center">
+                {isAuthenticated ? (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-gray-600 hover:text-red-600"
+                    onClick={handleLogout}
+                    title="Logout"
+                  >
+                    <LogOut className="h-5 w-5" />
+                  </Button>
+                ) : (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-gray-600 hover:text-blue-700"
+                    onClick={() => navigate('/login')}
+                    title="Sign In"
+                  >
+                    <User className="h-5 w-5" />
                   </Button>
                 )}
               </div>
