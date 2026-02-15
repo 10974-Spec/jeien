@@ -259,16 +259,16 @@ export const Header = () => {
               </Button>
 
               {/* Account Button with Dropdown */}
-              <div className="hidden sm:flex items-center gap-2 pl-2 border-l border-gray-200 relative profile-menu">
+              <div className="flex items-center gap-2 pl-2 border-l border-gray-200 relative profile-menu">
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="gap-2 text-gray-600 hover:text-blue-700"
+                  className="gap-2 text-gray-600 hover:text-blue-700 px-2 sm:px-4"
                   onClick={handleProfileClick}
                 >
-                  <User className="h-4 w-4" />
-                  <span className="hidden lg:inline">Account</span>
-                  <ChevronDown className={`h-4 w-4 transition-transform ${isProfileMenuOpen ? 'rotate-180' : ''}`} />
+                  <User className="h-5 w-5 sm:h-4 sm:w-4" />
+                  <span className="hidden sm:inline">Account</span>
+                  <ChevronDown className={`h-4 w-4 transition-transform ${isProfileMenuOpen ? 'rotate-180' : ''} hidden sm:block`} />
                 </Button>
 
                 {/* Profile Dropdown */}
