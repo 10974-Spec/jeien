@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import vendorService from '../../services/vendor.service'
+import { formatPhoneNumber } from '../../utils/phone.utils'
 
 const VendorStoreSettings = () => {
   const [storeInfo, setStoreInfo] = useState({
@@ -76,7 +77,7 @@ const VendorStoreSettings = () => {
         ...prev,
         contactInfo: {
           ...prev.contactInfo,
-          [field]: value
+          [field]: field === 'phone' ? formatPhoneNumber(value) : value
         }
       }))
     } else if (name.startsWith('socialLinks.')) {
@@ -104,7 +105,8 @@ const VendorStoreSettings = () => {
 
   const handleBankDetailsChange = (e) => {
     const { name, value } = e.target
-    setBankDetails(prev => ({ ...prev, [name]: value }))
+    const formattedValue = name === 'phoneNumber' ? formatPhoneNumber(value) : value
+    setBankDetails(prev => ({ ...prev, [name]: formattedValue }))
   }
 
   const handleStoreInfoSubmit = async (e) => {

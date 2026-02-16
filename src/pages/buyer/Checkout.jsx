@@ -6,6 +6,7 @@ import orderService from '../../services/order.service'
 import paymentService from '../../services/payment.service'
 import userService from '../../services/user.service'
 import toast from 'react-hot-toast'
+import { formatPhoneNumber } from '../../utils/phone.utils'
 
 const Checkout = () => {
   const navigate = useNavigate()
@@ -163,7 +164,7 @@ const Checkout = () => {
         ...prev,
         deliveryAddress: {
           ...prev.deliveryAddress,
-          [field]: value
+          [field]: field === 'phone' ? formatPhoneNumber(value) : value
         }
       }))
     } else {

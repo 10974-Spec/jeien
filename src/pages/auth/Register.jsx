@@ -1,4 +1,6 @@
 import React, { useState } from 'react'
+import { formatPhoneNumber } from '../../utils/phone.utils'
+
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
 import { ArrowLeft, ShoppingBag, UserPlus } from 'lucide-react'
