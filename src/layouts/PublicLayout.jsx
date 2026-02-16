@@ -64,31 +64,22 @@ const Badge = ({ children, variant = "default", className = "" }) => {
   );
 };
 
-// Main categories for navigation
-const mainCategories = [
-  { name: "Fruits & Vegetables", slug: "fruits-vegetables" },
-  { name: "Breads & Sweets", slug: "breads-sweets" },
-  { name: "Frozen Seafoods", slug: "frozen-seafoods" },
-  { name: "Raw Meats", slug: "raw-meats" },
-  { name: "Wines & Drinks", slug: "wines-drinks" },
-  { name: "Coffees & Teas", slug: "coffees-teas" },
-  { name: "Milks & Dairies", slug: "milks-dairies" },
-  { name: "Pet Foods", slug: "pet-foods" },
-];
+import categoryService from '../services/category.service'
 
-// Main navigation links
+// Header Component
 const navLinks = [
   { name: "Home", path: "/" },
   { name: "Shop", path: "/search" },
-  ,
-  { name: "Deals", path: "/deals" },
+  { name: "Vendors", path: "/vendors" },
+  { name: "Deals", path: "/search?deals=true" },
   { name: "About", path: "/about" },
+  { name: "Contact", path: "/contact" },
 ];
 
-// Header Component
 const Header = ({ user, isAuthenticated, handleLogout, getDashboardPath, userRole }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [categories, setCategories] = useState([]);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -96,6 +87,22 @@ const Header = ({ user, isAuthenticated, handleLogout, getDashboardPath, userRol
   useEffect(() => {
     setIsMenuOpen(false);
   }, [location.pathname]);
+
+  // Fetch categories on mount
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await categoryService.getAllCategories();
+        // Check if response contains categories array directly or in data property
+        const categoriesData = response.data?.categories || response.data || [];
+        setCategories(categoriesData);
+      } catch (error) {
+        console.error('Failed to fetch categories:', error);
+      }
+    };
+
+    fetchCategories();
+  }, []);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -350,22 +357,26 @@ const Header = ({ user, isAuthenticated, handleLogout, getDashboardPath, userRol
             <div className="relative group">
               <Button className="gap-2 rounded-none h-12 bg-gradient-to-r from-blue-700 to-blue-800 text-white hover:from-blue-800 hover:to-blue-900">
                 <Menu className="h-4 w-4" />
-                All Categories
+                Shop Categories
                 <ChevronDown className="h-4 w-4" />
               </Button>
 
               {/* Categories Dropdown Menu */}
               <div className="absolute left-0 top-full w-64 bg-white border border-gray-200 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-                {mainCategories.map((category) => (
-                  <button
-                    key={category.slug}
-                    className="w-full px-4 py-3 text-left text-gray-700 hover:bg-gray-50 hover:text-blue-700 flex items-center justify-between"
-                    onClick={() => handleCategoryClick(category.slug)}
-                  >
-                    <span>{category.name}</span>
-                    <ChevronDown className="h-3 w-3 transform rotate-270" />
-                  </button>
-                ))}
+                {categories.length > 0 ? (
+                  categories.map((category) => (
+                    <button
+                      key={category._id || category.slug}
+                      className="w-full px-4 py-3 text-left text-gray-700 hover:bg-gray-50 hover:text-blue-700 flex items-center justify-between"
+                      onClick={() => handleCategoryClick(category.slug)}
+                    >
+                      <span>{category.name}</span>
+                      <ChevronDown className="h-3 w-3 transform rotate-270" />
+                    </button>
+                  ))
+                ) : (
+                  <div className="p-4 text-center text-gray-500">Loading categories...</div>
+                )}
               </div>
             </div>
 
@@ -451,15 +462,19 @@ const Header = ({ user, isAuthenticated, handleLogout, getDashboardPath, userRol
 
             <div className="border-t border-gray-200 pt-4">
               <h3 className="px-4 py-2 text-sm font-semibold text-gray-500">Categories</h3>
-              {mainCategories.map((category) => (
-                <button
-                  key={category.slug}
-                  className="w-full px-4 py-2 text-left text-gray-600 hover:bg-gray-50 hover:text-blue-700"
-                  onClick={() => handleCategoryClick(category.slug)}
-                >
-                  {category.name}
-                </button>
-              ))}
+              {categories.length > 0 ? (
+                categories.map((category) => (
+                  <button
+                    key={category._id || category.slug}
+                    className="w-full px-4 py-2 text-left text-gray-600 hover:bg-gray-50 hover:text-blue-700"
+                    onClick={() => handleCategoryClick(category.slug)}
+                  >
+                    {category.name}
+                  </button>
+                ))
+              ) : (
+                <div className="px-4 py-2 text-gray-500 text-sm">Loading categories...</div>
+              )}
             </div>
 
             <div className="border-t border-gray-200 pt-4 space-y-2">

@@ -416,7 +416,7 @@ export const Header = () => {
                 onClick={() => setIsCategoriesOpen(!isCategoriesOpen)}
               >
                 <Menu className="h-4 w-4" />
-                All Categories
+                Header Categories
                 <ChevronDown className={`h-4 w-4 transition-transform ${isCategoriesOpen ? 'rotate-180' : ''}`} />
               </Button>
 
