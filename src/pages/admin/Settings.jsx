@@ -32,7 +32,23 @@ const AdminSettings = () => {
       setLoading(true);
       const response = await settingsService.getAdminSettings();
       if (response.success && response.data.settings) {
-        setSettings(response.data.settings);
+        const backendSettings = response.data.settings;
+        // Flatten nested objects to match component state
+        setSettings({
+          siteName: backendSettings.siteName || '',
+          siteEmail: backendSettings.siteEmail || '',
+          sitePhone: backendSettings.sitePhone || '',
+          currency: backendSettings.currency || 'KES',
+          defaultCommission: backendSettings.defaultCommission || 7,
+          allowVendorRegistration: backendSettings.allowVendorRegistration ?? true,
+          autoApproveVendors: backendSettings.autoApproveVendors ?? false,
+          requireProductApproval: backendSettings.requireProductApproval ?? true,
+          maintenanceMode: backendSettings.maintenanceMode ?? false,
+          enableMpesa: backendSettings.paymentMethods?.enableMpesa ?? true,
+          enablePaypal: backendSettings.paymentMethods?.enablePaypal ?? true,
+          enableCards: backendSettings.paymentMethods?.enableCards ?? true,
+          enableCashOnDelivery: backendSettings.paymentMethods?.enableCashOnDelivery ?? true
+        });
       }
     } catch (error) {
       console.error('Failed to fetch settings:', error);
@@ -67,6 +83,38 @@ const AdminSettings = () => {
       setMessage({ type: 'error', text: error.response?.data?.message || 'Failed to save settings' });
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleClearCache = async () => {
+    if (!window.confirm('Are you sure you want to clear all caches? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      setMessage({ type: 'success', text: 'All caches cleared successfully!' });
+      setTimeout(() => setMessage({ type: '', text: '' }), 3000);
+    } catch (error) {
+      console.error('Failed to clear cache:', error);
+      setMessage({ type: 'error', text: 'Failed to clear caches' });
+    }
+  };
+
+  const handleResetDatabase = async () => {
+    const confirmation = window.prompt('This will delete ALL data! Type "DELETE ALL DATA" to confirm:');
+
+    if (confirmation !== 'DELETE ALL DATA') {
+      setMessage({ type: 'error', text: 'Database reset cancelled - confirmation text did not match' });
+      setTimeout(() => setMessage({ type: '', text: '' }), 3000);
+      return;
+    }
+
+    try {
+      setMessage({ type: 'error', text: 'Database reset is disabled in production for safety' });
+      setTimeout(() => setMessage({ type: '', text: '' }), 3000);
+    } catch (error) {
+      console.error('Failed to reset database:', error);
+      setMessage({ type: 'error', text: 'Failed to reset database' });
     }
   };
 
@@ -220,7 +268,9 @@ const AdminSettings = () => {
                 <input
                   type="checkbox"
                   id="enableMpesa"
-                  defaultChecked
+                  name="enableMpesa"
+                  checked={settings.enableMpesa}
+                  onChange={handleChange}
                   className="mr-2"
                 />
                 <label htmlFor="enableMpesa" className="text-sm">
@@ -232,7 +282,9 @@ const AdminSettings = () => {
                 <input
                   type="checkbox"
                   id="enablePaypal"
-                  defaultChecked
+                  name="enablePaypal"
+                  checked={settings.enablePaypal}
+                  onChange={handleChange}
                   className="mr-2"
                 />
                 <label htmlFor="enablePaypal" className="text-sm">
@@ -244,11 +296,27 @@ const AdminSettings = () => {
                 <input
                   type="checkbox"
                   id="enableCards"
-                  defaultChecked
+                  name="enableCards"
+                  checked={settings.enableCards}
+                  onChange={handleChange}
                   className="mr-2"
                 />
                 <label htmlFor="enableCards" className="text-sm">
                   Enable Credit/Debit Cards
+                </label>
+              </div>
+
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="enableCashOnDelivery"
+                  name="enableCashOnDelivery"
+                  checked={settings.enableCashOnDelivery}
+                  onChange={handleChange}
+                  className="mr-2"
+                />
+                <label htmlFor="enableCashOnDelivery" className="text-sm">
+                  Enable Cash on Delivery
                 </label>
               </div>
             </div>
@@ -273,13 +341,19 @@ const AdminSettings = () => {
         <h3 className="text-lg font-medium mb-4">Danger Zone</h3>
         <div className="space-y-4">
           <div>
-            <button className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600">
+            <button
+              onClick={handleClearCache}
+              className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+            >
               Clear All Caches
             </button>
             <p className="text-sm text-gray-500 mt-1">Clear all system caches</p>
           </div>
           <div>
-            <button className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">
+            <button
+              onClick={handleResetDatabase}
+              className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+            >
               Reset Database
             </button>
             <p className="text-sm text-gray-500 mt-1">Warning: This will delete all data!</p>

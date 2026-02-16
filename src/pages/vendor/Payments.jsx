@@ -22,7 +22,7 @@ const VendorPayments = () => {
       const vendorStats = response.data.financial || response.data.overview || {}
 
       const totalRevenue = vendorStats.totalRevenue || 0
-      const commissionRate = 10
+      const commissionRate = 7
       const totalCommission = parseFloat((totalRevenue * (commissionRate / 100)).toFixed(2))
       const netEarnings = parseFloat((totalRevenue - totalCommission).toFixed(2))
 
@@ -39,8 +39,8 @@ const VendorPayments = () => {
           id: '1',
           orderId: 'ORD-123456',
           amount: 15000,
-          commission: 1500,
-          netAmount: 13500,
+          commission: 1050,
+          netAmount: 13950,
           date: '2024-01-15',
           status: 'PAID',
           paymentMethod: 'MPESA',
@@ -49,8 +49,8 @@ const VendorPayments = () => {
           id: '2',
           orderId: 'ORD-123457',
           amount: 8000,
-          commission: 800,
-          netAmount: 7200,
+          commission: 560,
+          netAmount: 7440,
           date: '2024-01-10',
           status: 'PAID',
           paymentMethod: 'BANK',
@@ -59,8 +59,8 @@ const VendorPayments = () => {
           id: '3',
           orderId: 'ORD-123458',
           amount: 25000,
-          commission: 2500,
-          netAmount: 22500,
+          commission: 1750,
+          netAmount: 23250,
           date: '2024-01-05',
           status: 'PENDING',
           paymentMethod: 'MPESA',
@@ -87,14 +87,14 @@ const VendorPayments = () => {
           <p className="text-xs mt-2 opacity-75">100% of sales</p>
         </div>
         <div className="bg-gradient-to-br from-red-500 to-red-600 p-6 rounded-xl shadow-lg text-white">
-          <h3 className="text-sm font-medium opacity-90 mb-2">Platform Fee (10%)</h3>
+          <h3 className="text-sm font-medium opacity-90 mb-2">Platform Fee (7%)</h3>
           <p className="text-3xl font-bold">KES {stats.totalCommission.toLocaleString()}</p>
           <p className="text-xs mt-2 opacity-75">Admin commission</p>
         </div>
         <div className="bg-gradient-to-br from-green-500 to-green-600 p-6 rounded-xl shadow-lg text-white">
           <h3 className="text-sm font-medium opacity-90 mb-2">Your Net Earnings</h3>
           <p className="text-3xl font-bold">KES {stats.netEarnings.toLocaleString()}</p>
-          <p className="text-xs mt-2 opacity-75">90% after commission</p>
+          <p className="text-xs mt-2 opacity-75">93% after commission</p>
         </div>
         <div className="bg-gradient-to-br from-yellow-500 to-yellow-600 p-6 rounded-xl shadow-lg text-white">
           <h3 className="text-sm font-medium opacity-90 mb-2">Pending Payouts</h3>
@@ -120,8 +120,8 @@ const VendorPayments = () => {
                   <th className="text-left py-4 px-4 text-sm font-semibold text-gray-700">Order ID</th>
                   <th className="text-left py-4 px-4 text-sm font-semibold text-gray-700">Date</th>
                   <th className="text-left py-4 px-4 text-sm font-semibold text-gray-700">Total Amount</th>
-                  <th className="text-left py-4 px-4 text-sm font-semibold text-gray-700">Commission (10%)</th>
-                  <th className="text-left py-4 px-4 text-sm font-semibold text-gray-700">Your Payout (90%)</th>
+                  <th className="text-left py-4 px-4 text-sm font-semibold text-gray-700">Commission (7%)</th>
+                  <th className="text-left py-4 px-4 text-sm font-semibold text-gray-700">Your Payout (93%)</th>
                   <th className="text-left py-4 px-4 text-sm font-semibold text-gray-700">Method</th>
                   <th className="text-left py-4 px-4 text-sm font-semibold text-gray-700">Status</th>
                 </tr>
@@ -173,11 +173,11 @@ const VendorPayments = () => {
               </li>
               <li className="flex items-start">
                 <span className="mr-2">•</span>
-                <span><strong>Commission rate: 10%</strong> of each order goes to platform fees</span>
+                <span><strong>Commission rate: 7%</strong> of each order goes to platform fees</span>
               </li>
               <li className="flex items-start">
                 <span className="mr-2">•</span>
-                <span><strong>You receive: 90%</strong> of each order directly to your phone</span>
+                <span><strong>You receive: 93%</strong> of each order directly to your phone</span>
               </li>
               <li className="flex items-start">
                 <span className="mr-2">•</span>
@@ -200,8 +200,8 @@ const VendorPayments = () => {
             <div className="text-sm text-green-800 bg-white p-4 rounded-lg mt-2">
               <p className="mb-2">If a customer pays <strong>KES 10,000</strong> for your product:</p>
               <div className="space-y-1 ml-4">
-                <p>• Platform fee (10%): <strong className="text-red-600">KES 1,000</strong></p>
-                <p>• Your payout (90%): <strong className="text-green-600">KES 9,000</strong></p>
+                <p>• Platform fee (7%): <strong className="text-red-600">KES 700</strong></p>
+                <p>• Your payout (93%): <strong className="text-green-600">KES 9,300</strong></p>
               </div>
             </div>
           </div>
