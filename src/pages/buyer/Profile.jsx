@@ -52,7 +52,8 @@ const Profile = () => {
       alert('Profile updated successfully!')
     } catch (error) {
       console.error('Failed to update profile:', error)
-      alert('Failed to update profile')
+      const errorMessage = error.response?.data?.message || 'Failed to update profile'
+      alert(errorMessage)
     }
   }
 
@@ -143,8 +144,8 @@ const Profile = () => {
               <button
                 onClick={() => setActiveTab('personal')}
                 className={`w-full text-left px-4 py-3 rounded-lg ${activeTab === 'personal'
-                    ? 'bg-blue-100 text-blue-800'
-                    : 'hover:bg-gray-100'
+                  ? 'bg-blue-100 text-blue-800'
+                  : 'hover:bg-gray-100'
                   }`}
               >
                 Personal Information
@@ -152,8 +153,8 @@ const Profile = () => {
               <button
                 onClick={() => setActiveTab('addresses')}
                 className={`w-full text-left px-4 py-3 rounded-lg ${activeTab === 'addresses'
-                    ? 'bg-blue-100 text-blue-800'
-                    : 'hover:bg-gray-100'
+                  ? 'bg-blue-100 text-blue-800'
+                  : 'hover:bg-gray-100'
                   }`}
               >
                 Addresses
@@ -161,8 +162,8 @@ const Profile = () => {
               <button
                 onClick={() => setActiveTab('orders')}
                 className={`w-full text-left px-4 py-3 rounded-lg ${activeTab === 'orders'
-                    ? 'bg-blue-100 text-blue-800'
-                    : 'hover:bg-gray-100'
+                  ? 'bg-blue-100 text-blue-800'
+                  : 'hover:bg-gray-100'
                   }`}
               >
                 Order History
@@ -170,8 +171,8 @@ const Profile = () => {
               <button
                 onClick={() => setActiveTab('security')}
                 className={`w-full text-left px-4 py-3 rounded-lg ${activeTab === 'security'
-                    ? 'bg-blue-100 text-blue-800'
-                    : 'hover:bg-gray-100'
+                  ? 'bg-blue-100 text-blue-800'
+                  : 'hover:bg-gray-100'
                   }`}
               >
                 Security
@@ -467,9 +468,9 @@ const Profile = () => {
                             <div className="text-right">
                               <p className="font-bold text-lg">KES {order.totalAmount}</p>
                               <span className={`px-2 py-1 rounded text-xs ${order.status === 'DELIVERED' ? 'bg-green-100 text-green-800' :
-                                  order.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
-                                    order.status === 'CANCELLED' ? 'bg-red-100 text-red-800' :
-                                      'bg-blue-100 text-blue-800'
+                                order.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
+                                  order.status === 'CANCELLED' ? 'bg-red-100 text-red-800' :
+                                    'bg-blue-100 text-blue-800'
                                 }`}>
                                 {order.status}
                               </span>

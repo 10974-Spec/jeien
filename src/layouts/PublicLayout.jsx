@@ -1,7 +1,7 @@
 import React, { useState, useContext, useEffect } from 'react'
 import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Search, ShoppingCart, Heart, User, Menu, MapPin, ChevronDown, Phone, LogOut, LayoutDashboard } from 'lucide-react'
+import { Search, ShoppingCart, Heart, User, Menu, MapPin, ChevronDown, Phone, LogOut, LayoutDashboard, ShoppingBag } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
 import { useRole } from '../hooks/useRole'
 import FloatingChatBubbles from '../components/FloatingChatBubbles'
@@ -260,6 +260,15 @@ const Header = ({ user, isAuthenticated, handleLogout, getDashboardPath, userRol
                     >
                       <User className="h-4 w-4" />
                       <span className="hidden lg:inline">{user?.name?.split(' ')[0] || 'Profile'}</span>
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="hidden sm:flex gap-2 text-gray-600 hover:text-blue-700"
+                      onClick={() => handleNavClick('/orders')}
+                    >
+                      <ShoppingBag className="h-4 w-4" />
+                      <span className="hidden lg:inline">My Orders</span>
                     </Button>
                     <Button
                       variant="ghost"
