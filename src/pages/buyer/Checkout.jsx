@@ -467,22 +467,21 @@ const Checkout = () => {
           setPollingInterval(null)
           setProcessingPayment(false)
 
+
           if (isTestMode) {
-            toast.info('Test payment timed out. Please check your order status.', {
+            toast.error('Test payment timed out. You can try manually checking status.', {
               duration: 6000
             })
           } else {
-            toast.info(
-              'Payment is being processed. Please check "My Orders" page to see your order status. If payment was successful, your order will appear there.',
-              {
-                duration: 8000,
-                action: {
-                  label: 'View Orders',
-                  onClick: () => navigate('/orders')
-                }
-              }
+            // In production/local without callback, we need to let them know
+            toast.error(
+              'Payment confirmation not received yet. If you have paid, please click "Check Payment Status" below.',
+              { duration: 8000 }
             )
           }
+
+          // specific flag to show manual check button
+          setProcessingPayment(true) // Keep it true so we can show the button
         }
       } catch (error) {
         console.error('Payment status check error:', error)
@@ -507,6 +506,54 @@ const Checkout = () => {
     }, isTestMode ? 2000 : 10000) // Check every 2 seconds in test mode, 10 in production
 
     setPollingInterval(interval)
+  }
+
+  const handleManualCheck = async () => {
+    if (!orderId) return
+
+    try {
+      setLoading(true)
+      // Check status
+      const statusResponse = await paymentService.getPaymentStatus(orderId)
+
+      if (statusResponse.data.paymentStatus === 'COMPLETED') {
+        toast.success('Payment confirmed! Processing your order...')
+        clearCart()
+        setProcessingPayment(false)
+        navigate('/orders')
+      } else {
+        toast.error(`Payment status: ${statusResponse.data.paymentStatus}. If you have paid, please wait a moment and try again.`)
+
+        // In dev mode/test mode, we offer a way to force success since callback setup is hard locally
+        if ((isTestMode || window.location.hostname === 'localhost')) {
+          // We use a confirm dialog as a simple UI for this dev-only feature
+          if (window.confirm("Development/Test Mode: Payment callback likely failed to reach localhost. \n\nClick OK to simulate a successful callback from the backend.")) {
+            try {
+              toast.loading("Simulating callback...");
+              await paymentService.testMpesaPayment({
+                orderId: orderId,
+                phone: mpesaPhone,
+                amount: Math.round(order?.totalAmount || 0),
+                forceSuccess: true
+              });
+              toast.dismiss();
+              toast.success("Payment simulated successfully!");
+              clearCart();
+              setProcessingPayment(false);
+              navigate('/orders');
+            } catch (e) {
+              console.error(e);
+              toast.error("Failed to simulate payment.");
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error(error)
+      toast.error('Failed to check status')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleOtherPayment = async (order) => {
@@ -1080,6 +1127,14 @@ const Checkout = () => {
                 >
                   Cancel Payment
                 </button>
+                <div className="mt-2 pt-2 border-t border-yellow-200">
+                  <button
+                    onClick={handleManualCheck}
+                    className="text-sm bg-yellow-100 text-yellow-800 px-3 py-1 rounded hover:bg-yellow-200 font-medium w-full"
+                  >
+                    Check Payment Status
+                  </button>
+                </div>
               </div>
             )}
 
