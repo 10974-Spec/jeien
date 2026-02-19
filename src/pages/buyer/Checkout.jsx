@@ -392,7 +392,8 @@ const Checkout = () => {
 
       try {
         const statusResponse = await paymentService.getPaymentStatus(orderId)
-        console.log('Payment status response:', statusResponse.data)
+        console.log(`Payment status poll #${attempts}:`, statusResponse.data.paymentStatus, statusResponse.data)
+
 
         if (statusResponse.data.paymentStatus === 'COMPLETED') {
           clearInterval(interval)

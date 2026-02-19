@@ -101,6 +101,19 @@ const paymentService = {
         'Content-Type': 'application/json',
       }
     });
+  },
+  /**
+   * Verify a payment transaction (Admin/Debug)
+   * @param {string} orderId - Order ID
+   * @param {string} transactionId - Checkout Request ID or Transaction ID
+   */
+  verifyPayment: (orderId, transactionId) => {
+    console.log('Verifying payment:', { orderId, transactionId });
+    return api.post('/payments/verify', { orderId, transactionId }, {
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    });
   }
 };
 

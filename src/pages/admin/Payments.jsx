@@ -1,4 +1,8 @@
 import settingsService from '../../services/settings.service'
+import orderService from '../../services/order.service'
+import paymentService from '../../services/payment.service'
+import { toast } from 'react-hot-toast'
+import React, { useState, useEffect } from 'react'
 
 const AdminPayments = () => {
   const [payments, setPayments] = useState([])
@@ -46,8 +50,9 @@ const AdminPayments = () => {
       })
 
       // Simulate payment data - in real app, fetch from payments endpoint
+      // Show all orders with payment attempts
       const paymentData = orders
-        .filter(order => order.paymentStatus === 'COMPLETED')
+        .filter(order => order.paymentStatus && order.paymentStatus !== 'PENDING')
         .map(order => ({
           id: order._id,
           orderId: order.orderId,
@@ -57,7 +62,8 @@ const AdminPayments = () => {
           netAmount: order.totalAmount - (order.commissionAmount || 0),
           paymentMethod: order.paymentMethod,
           paidAt: order.paymentDetails?.paidAt || order.createdAt,
-          status: 'PAID',
+          status: order.paymentStatus, // Use actual status (FAILED, PROCESSING, COMPLETED)
+          transactionId: order.paymentDetails?.transactionId
         }))
 
       setPayments(paymentData)
@@ -127,6 +133,30 @@ const AdminPayments = () => {
       setTimeout(() => setMessage({ type: '', text: '' }), 3000)
     } finally {
       setSaving(false)
+    }
+  }
+
+  const handleVerifyPayment = async (orderId, transactionId) => {
+    try {
+      const confirmVerify = window.confirm('Query M-Pesa to verify this transaction status?');
+      if (!confirmVerify) return;
+
+      toast.loading('Verifying payment...');
+      // We will need to add this endpoint to the service and backend
+      // For now, let's assume we can call an endpoint
+      const response = await paymentService.verifyPayment(orderId, transactionId);
+
+      toast.dismiss();
+      if (response.data.success) {
+        toast.success(`Verification complete: ${response.data.message}`);
+        fetchPaymentData(); // Refresh list
+      } else {
+        toast.error(`Verification failed: ${response.data.message}`);
+      }
+    } catch (error) {
+      console.error('Verification error:', error);
+      toast.dismiss();
+      toast.error('Failed to verify payment');
     }
   }
 
@@ -201,12 +231,22 @@ const AdminPayments = () => {
                       {new Date(payment.paidAt).toLocaleDateString()}
                     </td>
                     <td className="py-4">
-                      <span className={`px-2 py-1 rounded text-xs ${payment.status === 'PAID'
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-yellow-100 text-yellow-800'
-                        }`}>
-                        {payment.status}
-                      </span>
+                      <div className="flex items-center space-x-2">
+                        <span className={`px-2 py-1 rounded text-xs ${payment.status === 'COMPLETED' ? 'bg-green-100 text-green-800' :
+                          payment.status === 'FAILED' ? 'bg-red-100 text-red-800' :
+                            'bg-yellow-100 text-yellow-800'
+                          }`}>
+                          {payment.status}
+                        </span>
+                        {payment.status !== 'COMPLETED' && payment.transactionId && (
+                          <button
+                            onClick={() => handleVerifyPayment(payment.id, payment.transactionId)}
+                            className="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded border border-blue-200 hover:bg-blue-100"
+                          >
+                            Verify
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
